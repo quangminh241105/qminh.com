@@ -1,0 +1,16 @@
+Quang Minh
+IT Student
+
+Summary
+Building reliable web apps with clean architecture and practical UX.
+
+Education
+- BSc in Information Technology (2024 - Present)
+
+Experience
+- Frontend Developer Intern (2025)
+- Freelance Student Developer (2025 - Present)
+
+Skills
+- TypeScript, Next.js, React, Tailwind CSS
+- Node.js, PostgreSQL, Docker, GitHub Actions
