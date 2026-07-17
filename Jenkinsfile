@@ -82,7 +82,10 @@ pipeline {
                 withCredentials([file(credentialsId: 'qminh-env', variable: 'ENV_FILE')]) {
                     sshagent(['ubuntu-vm-jenkins']) {
                         sh '''
-                            scp -o StrictHostKeyChecking=no $ENV_FILE ${TARGET_USER}@${TARGET_SERVER}:${DEPLOY_PATH}/.env
+                            scp -o StrictHostKeyChecking=no $ENV_FILE ${TARGET_USER}@${TARGET_SERVER}:${DEPLOY_PATH}/.env.new
+                            ssh -o StrictHostKeyChecking=no ${TARGET_USER}@${TARGET_SERVER} "
+                                mv -f ${DEPLOY_PATH}/.env.new ${DEPLOY_PATH}/.env
+                            "
                         '''
                     }
                 }
