@@ -14,6 +14,10 @@ pipeline {
         // (see .env.example) - outside DEPLOY_PATH so `rsync --delete` below
         // never touches uploaded media.
         UPLOADS_HOST_PATH = '/opt/webapps/qminh-data/uploads'
+
+        // Keepalive probes stop the connection from being dropped as "idle"
+        // during quiet stretches of a long remote command like a Docker build.
+        SSH_OPTS = '-o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=6 -o ConnectTimeout=10'
     }
 
     triggers {
@@ -62,7 +66,7 @@ pipeline {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no ${TARGET_USER}@${TARGET_SERVER} "
+                        ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} "
                             mkdir -p ${DEPLOY_PATH}
                         "
 
@@ -82,8 +86,8 @@ pipeline {
                 withCredentials([file(credentialsId: 'qminh-env', variable: 'ENV_FILE')]) {
                     sshagent(['ubuntu-vm-jenkins']) {
                         sh '''
-                            scp -o StrictHostKeyChecking=no $ENV_FILE ${TARGET_USER}@${TARGET_SERVER}:${DEPLOY_PATH}/.env.new
-                            ssh -o StrictHostKeyChecking=no ${TARGET_USER}@${TARGET_SERVER} "
+                            scp ${SSH_OPTS} $ENV_FILE ${TARGET_USER}@${TARGET_SERVER}:${DEPLOY_PATH}/.env.new
+                            ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} "
                                 mv -f ${DEPLOY_PATH}/.env.new ${DEPLOY_PATH}/.env
                             "
                         '''
@@ -96,7 +100,7 @@ pipeline {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
                     sh '''
-                        ssh -o StrictHostKeyChecking=no ${TARGET_USER}@${TARGET_SERVER} "
+                        ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} "
                             echo 'Ensuring upload host directory exists: ${UPLOADS_HOST_PATH}'
                             mkdir -p ${UPLOADS_HOST_PATH}
                         "
@@ -109,8 +113,12 @@ pipeline {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
                     sh '''
-                        ssh ${TARGET_USER}@${TARGET_SERVER} "
+                        ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} "
+                            set -e
                             cd ${DEPLOY_PATH}
+
+                            echo 'Removing any stale, non-compose-managed ${APP_NAME} container...'
+                            docker rm -f ${APP_NAME} > /dev/null 2>&1 || true
 
                             echo 'Building and starting app + mongo...'
                             if docker compose version > /dev/null 2>&1; then
@@ -133,7 +141,7 @@ pipeline {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
                     sh '''
-                        ssh ${TARGET_USER}@${TARGET_SERVER} "
+                        ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} "
                             echo 'Waiting for application to start...'
                             
                             for i in {1..12}; do
