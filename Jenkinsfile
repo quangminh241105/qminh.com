@@ -112,10 +112,17 @@ pipeline {
                         ssh ${TARGET_USER}@${TARGET_SERVER} "
                             cd ${DEPLOY_PATH}
 
-                            echo 'Building and starting app + mongo via docker compose...'
-                            docker compose up -d --build
-
-                            docker compose ps
+                            echo 'Building and starting app + mongo...'
+                            if docker compose version > /dev/null 2>&1; then
+                                docker compose up -d --build
+                                docker compose ps
+                            elif command -v docker-compose > /dev/null 2>&1; then
+                                docker-compose up -d --build
+                                docker-compose ps
+                            else
+                                echo 'ERROR: neither the docker compose plugin nor the standalone docker-compose is installed on this host'
+                                exit 1
+                            fi
                         "
                     '''
                 }
