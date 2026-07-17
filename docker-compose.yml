@@ -1,0 +1,50 @@
+# Two-service stack for the host server (and optionally local dev):
+#   - app:   the Next.js portfolio, built from ./Dockerfile
+#   - mongo: self-hosted MongoDB, replacing the old Atlas connection
+#
+# Reads variables from a `.env` file in this directory (see .env.example).
+# Required for `mongo`:      MONGO_ROOT_USERNAME, MONGO_ROOT_PASSWORD
+# Required for `app`:        MONGODB_URI (should point at mongo:27017), MONGODB_DB,
+#                             ADMIN_API_KEY, ADMIN_SESSION_SECRET
+# Uploaded media persistence: UPLOADS_HOST_PATH (an ABSOLUTE path OUTSIDE the
+#                             Jenkins deploy path, e.g. /opt/webapps/qminh-data/uploads,
+#                             so `rsync --delete` in the Jenkins pipeline never touches it).
+#                             Defaults to ./data/uploads for local dev convenience only.
+
+services:
+  app:
+    build: .
+    container_name: qminh
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ${UPLOADS_HOST_PATH:-./data/uploads}:/app/public/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:7.0
+    container_name: qminh-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    ports:
+      # Loopback-only: lets host-side tooling (mongosh, a local `npm run dev`
+      # via a personal .env.local pointed at localhost:27017) reach it, without
+      # exposing MongoDB beyond the host itself.
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-data:

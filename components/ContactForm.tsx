@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+const inputClassName =
+  "rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800 outline-none ring-brand-600 focus:ring-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100";
+
 export default function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -19,45 +22,45 @@ export default function ContactForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
     >
-      <h3 className="text-xl font-semibold text-slate-800">Send a Message</h3>
-      <p className="mt-2 text-sm text-slate-600">
+      <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Send a Message</h3>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
         This form opens your email app with the message pre-filled.
       </p>
 
       <div className="mt-5 grid gap-4">
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-slate-700">Name</span>
+          <span className="font-medium text-slate-700 dark:text-slate-300">Name</span>
           <input
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-brand-600 focus:ring-2"
+            className={inputClassName}
             placeholder="Your name"
           />
         </label>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-slate-700">Email</span>
+          <span className="font-medium text-slate-700 dark:text-slate-300">Email</span>
           <input
             required
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-brand-600 focus:ring-2"
+            className={inputClassName}
             placeholder="you@example.com"
           />
         </label>
 
         <label className="grid gap-1 text-sm">
-          <span className="font-medium text-slate-700">Message</span>
+          <span className="font-medium text-slate-700 dark:text-slate-300">Message</span>
           <textarea
             required
             rows={5}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-brand-600 focus:ring-2"
+            className={inputClassName}
             placeholder="Tell me about your project or collaboration idea"
           />
         </label>

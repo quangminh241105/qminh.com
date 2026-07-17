@@ -8,3 +8,5 @@ Jenkinsfile
 .next
 .gitignore
 docker-compose.yml
+public/uploads
+data

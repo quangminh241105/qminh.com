@@ -28,10 +28,10 @@ export default async function Home() {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">
               {portfolio.profession}
             </p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-800 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-800 sm:text-5xl dark:text-slate-100">
               Hi, I am {portfolio.name}.
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
+            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-400">
               {portfolio.tagline}
             </p>
 
@@ -43,11 +43,11 @@ export default async function Home() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-sky-100 bg-white p-6 shadow-xl shadow-sky-100/60">
+          <div className="rounded-3xl border border-sky-100 bg-white p-6 shadow-xl shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-accent">
               Quick Summary
             </p>
-            <ul className="mt-4 grid gap-4 text-sm text-slate-700">
+            <ul className="mt-4 grid gap-4 text-sm text-slate-700 dark:text-slate-300">
               {portfolio.quickSummary.map((item) => (
                 <li key={item} className="rounded-xl bg-card px-4 py-3">
                   {item}
@@ -81,15 +81,15 @@ export default async function Home() {
           ))}
           <Link
             href="/projects"
-            className="group h-[24rem] cursor-pointer md:h-[25rem] flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md hover:border-brand-300"
+            className="group h-[24rem] cursor-pointer md:h-[25rem] flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md hover:border-brand-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-700"
           >
-            <div className="flex items-center justify-center rounded-full text-brand-600">
+            <div className="flex items-center justify-center rounded-full text-brand-600 dark:text-brand-400">
               <span className="text-4xl font-light">+</span>
             </div>
-            <div className="mt-4 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">
+            <div className="mt-4 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-400">
               <span>Explore More</span>
             </div>
-            <h3 className="mt-4 text-center text-lg font-semibold text-slate-800 transition-colors group-hover:text-brand-600">
+            <h3 className="mt-4 text-center text-lg font-semibold text-slate-800 transition-colors group-hover:text-brand-600 dark:text-slate-100 dark:group-hover:text-brand-400">
               VIEW ALL PROJECTS
             </h3>
           </Link>
@@ -110,9 +110,9 @@ export default async function Home() {
       </section>
 
       <section className="mx-auto mt-20 w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-sky-100 bg-white p-8 text-center shadow-lg shadow-sky-100/60">
-          <h2 className="text-3xl font-bold text-slate-800">Ready to collaborate?</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-slate-600">
+        <div className="rounded-3xl border border-sky-100 bg-white p-8 text-center shadow-lg shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Ready to collaborate?</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-slate-600 dark:text-slate-400">
             I am open to internships, freelance opportunities, and student startup projects.
           </p>
           <div className="mt-6 flex justify-center">

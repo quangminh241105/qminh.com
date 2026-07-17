@@ -9,6 +9,11 @@ pipeline {
         APP_PORT = '3000'
 
         DEPLOY_PATH = '/opt/webapps/qminh'
+
+        // Must match UPLOADS_HOST_PATH in the qminh-env Jenkins credential
+        // (see .env.example) - outside DEPLOY_PATH so `rsync --delete` below
+        // never touches uploaded media.
+        UPLOADS_HOST_PATH = '/opt/webapps/qminh-data/uploads'
     }
 
     triggers {
@@ -39,6 +44,11 @@ pipeline {
                     
                     if [ ! -f Dockerfile ]; then
                         echo "ERROR: Dockerfile missing"
+                        exit 1
+                    fi
+
+                    if [ ! -f docker-compose.yml ]; then
+                        echo "ERROR: docker-compose.yml missing"
                         exit 1
                     fi
 
@@ -79,6 +89,19 @@ pipeline {
             }
         }
 
+        stage('Prepare Upload Directory') {
+            steps {
+                sshagent(['ubuntu-vm-jenkins']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ${TARGET_USER}@${TARGET_SERVER} "
+                            echo 'Ensuring upload host directory exists: ${UPLOADS_HOST_PATH}'
+                            mkdir -p ${UPLOADS_HOST_PATH}
+                        "
+                    '''
+                }
+            }
+        }
+
         stage('Build & Start Application') {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
@@ -86,22 +109,10 @@ pipeline {
                         ssh ${TARGET_USER}@${TARGET_SERVER} "
                             cd ${DEPLOY_PATH}
 
-                            echo 'Building Docker image...'
-                            docker build -t ${APP_NAME}:latest .
+                            echo 'Building and starting app + mongo via docker compose...'
+                            docker compose up -d --build
 
-                            echo 'Stopping old container...'
-                            docker stop ${APP_NAME} || true
-                            docker rm ${APP_NAME} || true
-
-                            echo 'Starting ${APP_NAME} in Docker...'
-                            docker run -d \\
-                                --name ${APP_NAME} \\
-                                -p ${APP_PORT}:${APP_PORT} \\
-                                --env-file .env \\
-                                --restart unless-stopped \\
-                                ${APP_NAME}:latest
-                            
-                            docker ps | grep ${APP_NAME}
+                            docker compose ps
                         "
                     '''
                 }

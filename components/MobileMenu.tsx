@@ -11,7 +11,7 @@ export default function MobileMenu({ items }: { items: NavItem[] }) {
     <div className="relative md:hidden ml-3">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50"
+        className="flex h-[36px] w-[36px] items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
         aria-label="Toggle menu"
       >
         <svg
@@ -25,14 +25,14 @@ export default function MobileMenu({ items }: { items: NavItem[] }) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg z-50 origin-top-right">
+        <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg z-50 origin-top-right dark:border-slate-700 dark:bg-slate-900">
           <ul className="flex flex-col gap-1">
             {items.map((item) => (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="block rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-600"
+                  className="block rounded-xl px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-brand-400"
                 >
                   {item.label}
                 </Link>

@@ -12,29 +12,29 @@ This is a portfolio website built with Next.js App Router, Tailwind CSS, and Typ
 
 ## Local Setup
 
+MongoDB is self-hosted in Docker (see `docker-compose.yml`), not Atlas. Docker is optional for local dev - the site falls back to the static content in `lib/portfolio.ts` whenever MongoDB isn't reachable.
+
 1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-2. Create your environment file:
+2. Create your environment file and fill in real secrets:
 
 ```bash
-copy .env.example .env.local
+copy .env.example .env
 ```
 
-3. Add your MongoDB URI and database name in `.env.local`:
+3. (Optional) Start a local MongoDB:
 
-```env
-MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/?retryWrites=true&w=majority
-MONGODB_DB=portfolio
-ADMIN_API_KEY=replace-with-a-long-random-secret
-ADMIN_SESSION_SECRET=replace-with-another-long-random-secret
-ADMIN_ALLOWED_ORIGINS=http://localhost:3000
+```bash
+docker compose up mongo -d
 ```
 
-4. Start development server:
+If you're running `npm run dev` directly on the host (not in Docker), add a personal `.env.local` with `MONGODB_URI` pointing at `localhost:27017` instead of `mongo:27017` - see the comment in `.env.example`.
+
+4. Start the development server:
 
 ```bash
 npm run dev
@@ -120,7 +120,6 @@ npm run build
 
 ## Deploy
 
-Deploy to Vercel and set the same environment variables in your project settings:
+Deployment is handled by the existing Jenkins pipeline (`Jenkinsfile`): on push, it rsyncs the repo to the host server, injects secrets from the `qminh-env` Jenkins credential into `.env`, then runs `docker compose up -d --build`, which builds and (re)starts both the `app` and `mongo` containers together (`docker-compose.yml`).
 
-- MONGODB_URI
-- MONGODB_DB
+Uploaded media persists in a host directory outside the deploy path (`UPLOADS_HOST_PATH`, bind-mounted into the app container), so it survives redeploys.

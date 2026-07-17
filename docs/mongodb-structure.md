@@ -161,7 +161,7 @@ Security model:
 - Add article: insert in `articles` with unique `slug`.
 - Reorder sections: update `order` fields in each collection.
 
-## Validation Suggestions (Atlas)
+## Validation Suggestions
 
 For production, add MongoDB JSON schema validation per collection:
 
