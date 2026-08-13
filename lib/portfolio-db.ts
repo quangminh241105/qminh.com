@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { Collection, ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
-import { portfolioStore, type NavItem, type SocialLink } from "@/lib/portfolio";
+import { portfolioStore, type NavItem, type ResumeFile, type SocialLink } from "@/lib/portfolio";
 import { deleteUploadedFiles } from "@/lib/uploads";
 
 export type AboutSection = {
@@ -19,6 +19,7 @@ export type ProfileDoc = {
   socialLinks: SocialLink[];
   quickSummary: string[];
   about: AboutSection;
+  resumeFile?: ResumeFile;
   updatedAt: Date;
 };
 
@@ -63,6 +64,7 @@ export type PortfolioContent = {
   socialLinks: SocialLink[];
   quickSummary: string[];
   about: AboutSection;
+  resumeFile?: ResumeFile;
   skills: WithId<SkillDoc>[];
   projects: WithId<ProjectDoc & { primaryTechnology: string }>[];
   featuredProjects: WithId<ProjectDoc & { primaryTechnology: string }>[];
@@ -194,6 +196,7 @@ function fallbackContent(): PortfolioContent {
     socialLinks: [...portfolioStore.socialLinks],
     quickSummary: [...portfolioStore.quickSummary],
     about: { ...portfolioStore.about },
+    resumeFile: portfolioStore.resumeFile,
     skills: portfolioStore.skills.map((item, index) => ({ ...item, id: `fallback-skill-${index}`, order: index })),
     projects: plainProjects,
     featuredProjects: plainProjects.filter((p) => p.featured),
@@ -240,6 +243,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       socialLinks: profile.socialLinks,
       quickSummary: profile.quickSummary,
       about: profile.about,
+      resumeFile: profile.resumeFile,
       skills: skills.map(withId),
       projects: plainProjects,
       featuredProjects: plainProjects.filter((p) => p.featured),
@@ -261,6 +265,38 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
 export async function updateProfile(data: Omit<ProfileDoc, "updatedAt">): Promise<void> {
   const cols = await collections();
   await cols.profile.insertOne({ ...data, updatedAt: new Date() });
+}
+
+export async function updateResumeFile(file: ResumeFile): Promise<void> {
+  const managedResumeUrl = /^\/uploads\/[a-f0-9-]{36}\.(doc|docx|pdf)$/;
+  const urlMatch = file.url.match(managedResumeUrl);
+  if (!urlMatch || urlMatch[1] !== file.format) {
+    throw new Error("Invalid CV upload reference");
+  }
+  if (!file.name.trim() || file.name.length > 200) {
+    throw new Error("Invalid CV filename");
+  }
+  if (!Number.isInteger(file.size) || file.size < 1 || file.size > 10 * 1024 * 1024) {
+    throw new Error("Invalid CV file size");
+  }
+
+  await ensureBootstrapped();
+  const cols = await collections();
+  const current = await cols.profile.find().sort({ updatedAt: -1 }).limit(1).next();
+
+  if (!current) {
+    throw new Error("No profile document found");
+  }
+
+  const storedFile: ResumeFile = { ...file, updatedAt: new Date().toISOString() };
+  await cols.profile.updateOne(
+    { _id: current._id },
+    { $set: { resumeFile: storedFile, updatedAt: new Date() } },
+  );
+
+  if (current.resumeFile?.url && current.resumeFile.url !== file.url) {
+    await deleteUploadedFiles([current.resumeFile.url]);
+  }
 }
 
 async function nextOrder<T extends { order: number }>(collection: Collection<T>): Promise<number> {

@@ -4,10 +4,21 @@ import { notFound } from "next/navigation";
 import { marked } from "marked";
 import SectionTitle from "@/components/SectionTitle";
 import { getPortfolioContent } from "@/lib/portfolio-db";
+import type { Metadata } from "next";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const portfolio = await getPortfolioContent();
+  const article = portfolio.articles.find((item) => item.slug === slug);
+
+  return article
+    ? { title: `${article.title} | Quang Minh`, description: article.excerpt }
+    : { title: "Article not found | Quang Minh" };
+}
 
 export default async function ArticleDetailPage({ params }: PageProps) {
   const { slug } = await params;

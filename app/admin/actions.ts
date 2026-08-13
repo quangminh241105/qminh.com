@@ -13,12 +13,14 @@ import {
   deleteSkill,
   upsertResumeItem,
   deleteResumeItem,
+  updateResumeFile,
   type ProfileDoc,
   type ProjectDoc,
   type ArticleDoc,
   type SkillDoc,
   type ResumeItemDoc,
 } from "@/lib/portfolio-db";
+import type { ResumeFile } from "@/lib/portfolio";
 
 async function requireSession(): Promise<void> {
   const cookieStore = await cookies();
@@ -107,5 +109,11 @@ export async function upsertResumeItemAction(data: Partial<ResumeItemDoc> & { id
 export async function deleteResumeItemAction(id: string): Promise<void> {
   await requireSession();
   await deleteResumeItem(id);
+  revalidateAll();
+}
+
+export async function updateResumeFileAction(file: ResumeFile): Promise<void> {
+  await requireSession();
+  await updateResumeFile(file);
   revalidateAll();
 }

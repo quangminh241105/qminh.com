@@ -38,6 +38,13 @@ Single latest document (queried by `updatedAt` desc):
     "background": "...",
     "interests": ["Web Architecture", "Cloud & DevOps"]
   },
+  "resumeFile": {
+    "url": "/uploads/uuid.pdf",
+    "name": "quang-minh-cv.pdf",
+    "size": 245760,
+    "format": "pdf",
+    "updatedAt": "2026-08-12T00:00:00.000Z"
+  },
   "updatedAt": "2026-03-30T00:00:00.000Z"
 }
 ```

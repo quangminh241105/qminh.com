@@ -33,6 +33,7 @@ export function ProfileTab({ portfolio }: { portfolio: PortfolioContent }) {
         location: form.location,
         navItems: portfolio.navItems,
         socialLinks: portfolio.socialLinks,
+        resumeFile: portfolio.resumeFile,
         quickSummary: form.quickSummary.split("\n").map((s) => s.trim()).filter(Boolean),
         about: {
           intro: form.intro,

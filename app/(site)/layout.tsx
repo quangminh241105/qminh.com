@@ -8,8 +8,11 @@ export default function SiteLayout({
 }>) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
       <Navbar />
-      <div className="flex-1">{children}</div>
+      <div id="main-content" className="flex-1">{children}</div>
       <Footer />
     </div>
   );

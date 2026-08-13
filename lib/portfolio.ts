@@ -8,6 +8,14 @@ export type SocialLink = {
   href: string;
 };
 
+export type ResumeFile = {
+  url: string;
+  name: string;
+  size: number;
+  format: "doc" | "docx" | "pdf";
+  updatedAt: string;
+};
+
 export class Skill {
   constructor(
     public readonly name: string,
@@ -24,6 +32,7 @@ export class Project {
     public readonly repoUrl: string,
     public readonly demoUrl: string,
     public readonly featured: boolean,
+    public readonly images?: string[],
   ) {}
 
   get primaryTechnology(): string {
@@ -61,6 +70,7 @@ export class PortfolioStore {
   readonly profession = "IT Student";
   readonly tagline = "Building reliable web apps with clean architecture and practical UX.";
   readonly location = "Ho Chi Minh City, Vietnam";
+  readonly resumeFile: ResumeFile | undefined = undefined;
   readonly quickSummary = [
     "Focused on scalable frontend architecture",
     "Hands-on with Next.js, TypeScript, and APIs",

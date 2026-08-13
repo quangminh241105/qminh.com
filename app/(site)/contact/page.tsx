@@ -1,6 +1,13 @@
 import ContactForm from "@/components/ContactForm";
 import SectionTitle from "@/components/SectionTitle";
 import { getPortfolioContent } from "@/lib/portfolio-db";
+import type { Metadata } from "next";
+import { ArrowUpRight, Clock3, MapPin } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Contact | Quang Minh",
+  description: "Get in touch with Quang Minh about internships, freelance work, or a software project.",
+};
 
 export default async function ContactPage() {
   const portfolio = await getPortfolioContent();
@@ -21,13 +28,16 @@ export default async function ContactPage() {
           <ul className="mt-4 grid gap-3">
             {portfolio.socialLinks.map((link) => (
               <li key={link.label}>
-                <a href={link.href} className="font-medium text-brand-600 hover:text-brand-500 dark:text-brand-400">
-                  {link.label}
+                <a href={link.href} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 font-medium text-brand-600 transition-colors hover:border-brand-300 hover:bg-brand-50 dark:border-slate-800 dark:text-brand-400 dark:hover:border-brand-800 dark:hover:bg-brand-950/30">
+                  {link.label} <ArrowUpRight className="h-4 w-4" />
                 </a>
               </li>
             ))}
           </ul>
-          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">Response time: usually within 24 hours.</p>
+          <div className="mt-7 grid gap-3 border-t border-slate-200 pt-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+            <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-brand-500" /> {portfolio.location}</p>
+            <p className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-brand-500" /> Usually replies within 24 hours</p>
+          </div>
         </aside>
       </section>
     </main>

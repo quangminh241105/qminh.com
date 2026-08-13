@@ -80,7 +80,7 @@ export function AdminDashboard({ portfolio }: { portfolio: PortfolioContent }) {
         {activeTab === "profile" ? <ProfileTab portfolio={portfolio} /> : null}
         {activeTab === "projects" ? <ProjectsTab projects={portfolio.projects} /> : null}
         {activeTab === "articles" ? <ArticlesTab articles={portfolio.articles} /> : null}
-        {activeTab === "resume" ? <ResumeTab resume={portfolio.resume} /> : null}
+        {activeTab === "resume" ? <ResumeTab resume={portfolio.resume} resumeFile={portfolio.resumeFile} /> : null}
         {activeTab === "skills" ? <SkillsTab skills={portfolio.skills} /> : null}
       </main>
     </div>

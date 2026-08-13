@@ -105,6 +105,12 @@ A secure admin UI is available at `/admin`.
 - The browser never stores `ADMIN_API_KEY` in local storage.
 - Sign out removes the session cookie.
 
+### Updating the public CV
+
+From `/admin`, open the `Resume` tab and use the `Public CV` upload area. The upload is protected by the existing admin session and accepts only `.doc`, `.docx`, and `.pdf` files up to 10MB. The file signature, extension, and MIME type are checked before it is stored. Uploading a replacement updates the public download links and removes the previous managed CV file.
+
+Uploaded CVs and other media are stored in `public/uploads`. In deployment, keep `UPLOADS_HOST_PATH` pointed at persistent storage so CVs survive redeploys.
+
 ## Project Structure
 
 - app: routes and pages

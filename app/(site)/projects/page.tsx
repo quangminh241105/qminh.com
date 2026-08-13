@@ -1,6 +1,12 @@
 import ProjectCard from "@/components/ProjectCard";
 import SectionTitle from "@/components/SectionTitle";
 import { getPortfolioContent } from "@/lib/portfolio-db";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Projects | Quang Minh",
+  description: "Selected web projects by Quang Minh, with a focus on clean architecture and practical UX.",
+};
 
 export default async function ProjectsPage() {
   const portfolio = await getPortfolioContent();
