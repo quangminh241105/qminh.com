@@ -6,6 +6,8 @@ import ProjectCard from "@/components/ProjectCard";
 import { getPortfolioContent } from "@/lib/portfolio-db";
 import Link from "next/link";
 import { type Project } from "@/lib/portfolio";
+import { CheckIcon, PlusIcon, ArrowRightIcon, TerminalIcon } from "@/components/icons";
+import RetroIconLayer from "@/components/RetroIconLayer";
 
 function getRandomProjects(projects: Project[]) {
   const shuffled = [...projects];
@@ -22,35 +24,56 @@ export default async function Home() {
 
   return (
     <main>
-      <section className="hero-gradient relative overflow-hidden">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+      {/* Hero Section (Zero Gradients, Pure Geometric Structure) */}
+      <section className="relative border-b-2 border-black bg-zinc-50 bg-geo-grid py-16 sm:py-24 dark:border-blue-400 dark:bg-black">
+        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-brand-600">
-              {portfolio.profession}
-            </p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-800 sm:text-5xl dark:text-slate-100">
-              Hi, I am {portfolio.name}.
+            <div className="inline-flex items-center gap-2 border-2 border-black bg-[#ffe600] px-3 py-1 font-mono text-xs font-black uppercase tracking-wider text-black shadow-[2px_2px_0px_#000000]">
+              <TerminalIcon className="h-3.5 w-3.5" />
+              <span>{portfolio.profession}</span>
+            </div>
+
+            <h1 className="mt-6 text-4xl font-black uppercase tracking-tight text-black sm:text-6xl dark:text-white">
+              Hi, I am <span className="underline decoration-blue-600 decoration-wavy decoration-4 dark:decoration-blue-400">{portfolio.name}</span>.
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-400">
+
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-700 dark:text-zinc-300 font-sans">
               {portfolio.tagline}
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button href="/about">About Me</Button>
-              <Button href="/contact" variant="secondary">
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Button href="/about" variant="primary">
+                About Me
+              </Button>
+              <Button
+                href="/contact"
+                variant="secondary"
+                className="dark:shadow-[3px_3px_0px_#ffffff] dark:hover:shadow-[5px_5px_0px_#ffffff]"
+              >
                 Contact Me
               </Button>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-sky-100 bg-white p-6 shadow-xl shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-accent">
-              Quick Summary
-            </p>
-            <ul className="mt-4 grid gap-4 text-sm text-slate-700 dark:text-slate-300">
-              {portfolio.quickSummary.map((item) => (
-                <li key={item} className="rounded-xl bg-card px-4 py-3">
-                  {item}
+          {/* Quick Summary Spec Box */}
+          <div className="border-2 border-black bg-white p-6 shadow-[6px_6px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_#000000]">
+            <div className="flex items-center justify-between border-b-2 border-black pb-3 dark:border-zinc-700">
+              <p className="font-mono text-xs font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">
+                Quick Summary
+              </p>
+              <span className="h-2 w-2 bg-green-500 border border-black" />
+            </div>
+
+            <ul className="mt-4 space-y-3">
+              {portfolio.quickSummary.map((item, idx) => (
+                <li
+                  key={idx}
+                  className="flex items-start gap-3 border border-black bg-zinc-50 p-3 font-mono text-xs text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
+                >
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border border-black bg-green-500 text-black">
+                    <CheckIcon className="h-3 w-3 stroke-[3]" />
+                  </span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
@@ -58,49 +81,54 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Tech Stack Skills Section */}
       <section className="mx-auto mt-20 w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionTitle
           eyebrow="Skills"
-          title="Tech Stack"
-          description="Core technologies I currently use to build fast and maintainable web experiences."
+          title="Tech Stack & Tools"
+          description="Core technologies and frameworks I use to build robust, scalable applications."
         />
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <SkillsChart skills={portfolio.skills} />
         </div>
       </section>
 
+      {/* Selected Work Section */}
       <section className="mx-auto mt-20 w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionTitle
-          eyebrow="Projects"
-          title="Selected Work"
-          description="A few highlighted projects with repository and demo links."
+          eyebrow="Portfolio"
+          title="Selected Projects"
+          description="Featured web apps and software engineering projects with live demos and source code."
         />
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {displayProjects.map((project) => (
             <ProjectCard key={project.title} project={project} />
           ))}
+
+          {/* View All Projects Card */}
           <Link
             href="/projects"
-            className="group h-[24rem] cursor-pointer md:h-[25rem] flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md hover:border-brand-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-brand-700"
+            className="group flex h-full min-h-[320px] flex-col items-center justify-center border-2 border-dashed border-black bg-zinc-50 p-6 transition-all hover:bg-blue-600 hover:text-white hover:border-solid hover:shadow-[6px_6px_0px_#000000] dark:border-blue-400 dark:bg-zinc-950 dark:hover:bg-blue-500 dark:hover:text-white dark:hover:shadow-[6px_6px_0px_#000000] cursor-pointer"
           >
-            <div className="flex items-center justify-center rounded-full text-brand-600 dark:text-brand-400">
-              <span className="text-4xl font-light">+</span>
+            <div className="flex h-14 w-14 items-center justify-center border-2 border-black bg-white text-black shadow-[3px_3px_0px_#000000] group-hover:rotate-12 transition-transform">
+              <PlusIcon className="h-7 w-7" />
             </div>
-            <div className="mt-4 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-brand-700 dark:text-brand-400">
-              <span>Explore More</span>
-            </div>
-            <h3 className="mt-4 text-center text-lg font-semibold text-slate-800 transition-colors group-hover:text-brand-600 dark:text-slate-100 dark:group-hover:text-brand-400">
-              VIEW ALL PROJECTS
+            <p className="mt-5 font-mono text-xs font-black uppercase tracking-widest text-black dark:text-zinc-400 group-hover:text-white">
+              Explore More
+            </p>
+            <h3 className="mt-2 text-center font-mono text-lg font-black uppercase text-black dark:text-white group-hover:text-white">
+              View All Projects →
             </h3>
           </Link>
         </div>
       </section>
 
+      {/* Testimonials Section */}
       <section className="mx-auto mt-20 w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <SectionTitle
-          eyebrow="Testimonials"
+          eyebrow="Feedback"
           title="What Others Say"
-          description="Optional social proof section you can replace with real mentor and teammate feedback."
+          description="Testimonials and feedback from mentors, team leads, and project collaborators."
         />
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {portfolio.testimonials.map((testimonial) => (
@@ -109,14 +137,33 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Collaboration Callout */}
       <section className="mx-auto mt-20 w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-sky-100 bg-white p-8 text-center shadow-lg shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
-          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Ready to collaborate?</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-slate-600 dark:text-slate-400">
-            I am open to internships, freelance opportunities, and student startup projects.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Button href="/contact">Start a Conversation</Button>
+        <div className="collab-pixel-bg border-2 border-black">
+          <RetroIconLayer />
+          <div className="relative grid gap-8 p-6 sm:p-8 md:grid-cols-[1fr_auto] md:items-center">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 border-2 border-black bg-green-400 px-3 py-1 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-black">
+                <span className="h-2 w-2 border border-black bg-red-500" />
+                <span>Open to collab</span>
+              </div>
+              <h2 className="mt-5 font-mono text-3xl font-black uppercase tracking-tight text-black dark:text-white sm:text-4xl">
+                Ready to collaborate?
+              </h2>
+              <p className="mt-4 max-w-2xl font-mono text-sm font-medium leading-6 text-zinc-700 dark:text-blue-100 sm:text-base">
+                I am open to software engineering internships, freelance projects, and tech collaborations.
+              </p>
+            </div>
+
+            <div className="border-2 border-black bg-blue-600 p-4 md:min-w-[250px]">
+              <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-blue-100">
+                Next move
+              </p>
+              <Button href="/contact" variant="white" className="mt-3 w-full">
+                <span>Start a Conversation</span>
+                <ArrowRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>

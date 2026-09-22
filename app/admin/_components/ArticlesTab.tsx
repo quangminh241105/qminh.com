@@ -10,21 +10,23 @@ import { UploadField } from "./UploadField";
 import type { PortfolioContent } from "@/lib/portfolio-db";
 
 type ArticleItem = PortfolioContent["articles"][number];
+type GroupItem = PortfolioContent["articleGroups"][number];
 
 const emptyForm = {
   id: undefined as string | undefined,
   title: "",
   excerpt: "",
   slug: "",
+  groupSlug: "",
   publishedAt: new Date().toISOString().slice(0, 10),
   body: "",
   coverImage: "",
   videoUrl: "",
 };
 
-export function ArticlesTab({ articles }: { articles: ArticleItem[] }) {
+export function ArticlesTab({ articles, groups }: { articles: ArticleItem[]; groups: GroupItem[] }) {
   const router = useRouter();
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({ ...emptyForm, groupSlug: groups[0]?.slug ?? "" });
   const [isSaving, setIsSaving] = useState(false);
 
   function startEdit(article: ArticleItem) {
@@ -33,6 +35,7 @@ export function ArticlesTab({ articles }: { articles: ArticleItem[] }) {
       title: article.title,
       excerpt: article.excerpt,
       slug: article.slug,
+      groupSlug: article.groupSlug,
       publishedAt: article.publishedAt,
       body: article.body ?? "",
       coverImage: article.coverImage ?? "",
@@ -49,12 +52,13 @@ export function ArticlesTab({ articles }: { articles: ArticleItem[] }) {
         title: form.title,
         excerpt: form.excerpt,
         slug: form.slug,
+        groupSlug: form.groupSlug,
         publishedAt: form.publishedAt,
         body: form.body || undefined,
         coverImage: form.coverImage || undefined,
         videoUrl: form.videoUrl || undefined,
       });
-      setForm(emptyForm);
+      setForm({ ...emptyForm, groupSlug: groups[0]?.slug ?? "" });
       router.refresh();
     } finally {
       setIsSaving(false);
@@ -81,6 +85,23 @@ export function ArticlesTab({ articles }: { articles: ArticleItem[] }) {
           <div>
             <Label htmlFor="a-slug">Slug</Label>
             <Input id="a-slug" required value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} />
+          </div>
+          <div>
+            <Label htmlFor="a-group">Group</Label>
+            <select
+              id="a-group"
+              required
+              value={form.groupSlug}
+              onChange={(e) => setForm((f) => ({ ...f, groupSlug: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-brand-600 transition-colors focus:ring-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            >
+              {groups.length === 0 ? <option value="">No groups yet — add one first</option> : null}
+              {groups.map((group) => (
+                <option key={group.id} value={group.slug}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <Label htmlFor="a-excerpt">Excerpt</Label>
@@ -123,7 +144,11 @@ export function ArticlesTab({ articles }: { articles: ArticleItem[] }) {
               {form.id ? "Save changes" : "Add article"}
             </UiButton>
             {form.id ? (
-              <UiButton type="button" variant="ghost" onClick={() => setForm(emptyForm)}>
+              <UiButton
+                type="button"
+                variant="ghost"
+                onClick={() => setForm({ ...emptyForm, groupSlug: groups[0]?.slug ?? "" })}
+              >
                 Cancel
               </UiButton>
             ) : null}
@@ -137,7 +162,7 @@ export function ArticlesTab({ articles }: { articles: ArticleItem[] }) {
             <div>
               <h4 className="font-semibold text-slate-800 dark:text-slate-100">{article.title}</h4>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                /{article.slug} · {article.publishedAt}
+                /blog/{article.groupSlug}/{article.slug} · {article.publishedAt}
               </p>
             </div>
             <div className="flex shrink-0 gap-2">

@@ -161,6 +161,29 @@ pipeline {
                 }
             }
         }
+
+        stage('Seed Blog Content') {
+            steps {
+                sshagent(['ubuntu-vm-jenkins']) {
+                    sh '''
+                        ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} "
+                            set -e
+                            cd ${DEPLOY_PATH}
+
+                            echo 'Injecting data/seed/*.json into the running database...'
+                            if docker compose version > /dev/null 2>&1; then
+                                docker compose exec -T app node scripts/seed-articles.mjs
+                            elif command -v docker-compose > /dev/null 2>&1; then
+                                docker-compose exec -T app node scripts/seed-articles.mjs
+                            else
+                                echo 'ERROR: neither the docker compose plugin nor the standalone docker-compose is installed on this host'
+                                exit 1
+                            fi
+                        "
+                    '''
+                }
+            }
+        }
     }
 
     post {

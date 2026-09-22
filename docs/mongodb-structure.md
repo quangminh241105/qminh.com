@@ -84,21 +84,35 @@ Purpose: social proof cards.
 }
 ```
 
-### 5) `articles`
+### 5) `articleGroups`
 
-Purpose: blog listing.
+Purpose: blog groups/categories. `/blog` lists these as cards; clicking one shows its articles at `/blog/<slug>`.
+
+```json
+{
+  "name": "Linux for Newbies",
+  "slug": "linux-for-newbies",
+  "description": "A beginner-friendly series that walks new users through core Linux concepts.",
+  "order": 0
+}
+```
+
+### 6) `articles`
+
+Purpose: blog posts, each belonging to exactly one group via `groupSlug`. Public URL: `/blog/<groupSlug>/<slug>`.
 
 ```json
 {
   "title": "How I Structure Next.js App Router Projects",
   "excerpt": "A practical folder strategy for reusable components and routes.",
   "slug": "nextjs-structure",
+  "groupSlug": "engineering-notes",
   "publishedAt": "2026-03-15",
   "order": 0
 }
 ```
 
-### 6) `resumeItems`
+### 7) `resumeItems`
 
 Purpose: resume timeline section.
 
@@ -117,8 +131,10 @@ Indexes are created automatically by `lib/portfolio-db.ts`:
 
 - `skills`: `{ order: 1 }`
 - `projects`: `{ featured: 1, order: 1 }`
+- `articleGroups`: `{ slug: 1 }` (unique)
+- `articleGroups`: `{ order: 1 }`
 - `articles`: `{ slug: 1 }` (unique)
-- `articles`: `{ order: 1 }`
+- `articles`: `{ groupSlug: 1, order: 1 }`
 - `resumeItems`: `{ order: 1 }`
 - `testimonials`: `{ order: 1 }`
 
@@ -158,8 +174,10 @@ Security model:
 
 - Update profile header/about text: edit the newest document in `profile`.
 - Add project: insert new document in `projects` and set `order`.
-- Add article: insert in `articles` with unique `slug`.
+- Add blog group: insert in `articleGroups` with unique `slug`.
+- Add article: insert in `articles` with unique `slug` and a `groupSlug` matching an existing group.
 - Reorder sections: update `order` fields in each collection.
+- Bulk-load a themed post series: drop a JSON file (`{ group, articles }`, see `data/seed/linux-for-newbies.json`) into `data/seed/` and run `node scripts/seed-articles.mjs` (or `npm run seed:articles`). It upserts by `slug`, so re-running is safe. In production this runs automatically as the "Seed Blog Content" Jenkins stage after each deploy.
 
 ## Validation Suggestions
 

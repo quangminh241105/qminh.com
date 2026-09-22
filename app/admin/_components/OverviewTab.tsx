@@ -37,6 +37,7 @@ export function OverviewTab({ portfolio }: { portfolio: PortfolioContent }) {
     { label: "Skills", value: portfolio.skills.length },
     { label: "Projects", value: portfolio.projects.length },
     { label: "Testimonials", value: portfolio.testimonials.length },
+    { label: "Blog groups", value: portfolio.articleGroups.length },
     { label: "Articles", value: portfolio.articles.length },
     { label: "Resume entries", value: portfolio.resume.length },
   ];

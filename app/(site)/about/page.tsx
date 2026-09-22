@@ -2,6 +2,11 @@ import Button from "@/components/Button";
 import SectionTitle from "@/components/SectionTitle";
 import SkillsChart from "@/components/SkillsChart";
 import { getPortfolioContent } from "@/lib/portfolio-db";
+import { UserIcon, SparklesIcon } from "@/components/icons";
+
+export const metadata = {
+  title: "About Me | Quang Minh",
+};
 
 export default async function AboutPage() {
   const portfolio = await getPortfolioContent();
@@ -10,44 +15,66 @@ export default async function AboutPage() {
     <main className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <SectionTitle
         eyebrow="About Me"
-        title="A curious IT student focused on practical engineering"
+        title="Software Engineering & Practical Architecture"
         description={portfolio.about.intro}
       />
 
-      <section className="mt-10 grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 md:grid-cols-2 dark:border-slate-800 dark:bg-slate-900">
-        <div>
-          <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Background</h3>
-          <p className="mt-3 text-slate-600 dark:text-slate-400">{portfolio.about.background}</p>
+      <section className="mt-10 grid gap-6 md:grid-cols-2">
+        {/* Background Box */}
+        <div className="border-2 border-black bg-white p-6 sm:p-8 shadow-[5px_5px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_#000000]">
+          <div className="flex items-center gap-2 border-b-2 border-black pb-3 dark:border-zinc-700">
+            <span className="flex h-7 w-7 items-center justify-center border border-black bg-blue-600 text-white">
+              <UserIcon className="h-4 w-4" />
+            </span>
+            <h3 className="font-mono text-base font-black uppercase text-black dark:text-white">
+              Background & Focus
+            </h3>
+          </div>
+          <p className="mt-4 font-sans text-base leading-relaxed text-zinc-700 dark:text-zinc-300">
+            {portfolio.about.background}
+          </p>
         </div>
 
-        <div>
-          <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Interests</h3>
-          <ul className="mt-3 grid gap-2 text-slate-600 dark:text-slate-400">
+        {/* Interests Box */}
+        <div className="border-2 border-black bg-white p-6 sm:p-8 shadow-[5px_5px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_#000000]">
+          <div className="flex items-center gap-2 border-b-2 border-black pb-3 dark:border-zinc-700">
+            <span className="flex h-7 w-7 items-center justify-center border border-black bg-green-500 text-black">
+              <SparklesIcon className="h-4 w-4" />
+            </span>
+            <h3 className="font-mono text-base font-black uppercase text-black dark:text-white">
+              Core Technical Interests
+            </h3>
+          </div>
+          <ul className="mt-4 grid gap-2.5">
             {portfolio.about.interests.map((interest) => (
               <li
                 key={interest}
-                className="rounded-lg bg-card px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
+                className="flex items-center gap-2 border border-black bg-zinc-50 px-3 py-2 font-mono text-xs font-bold uppercase text-black dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200"
               >
-                {interest}
+                <span className="h-2 w-2 bg-red-500 border border-black" />
+                <span>{interest}</span>
               </li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section className="mt-12">
+      {/* Skills Section */}
+      <section className="mt-16">
         <SectionTitle
           eyebrow="Skills"
-          title="Tech stack and tools"
-          description="A visual overview of the technologies I use for coursework and personal projects."
+          title="Tech Stack & Tools"
+          description="A visual overview of the technologies I use for production builds and coursework."
         />
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
           <SkillsChart skills={portfolio.skills} />
         </div>
       </section>
 
-      <div className="mt-10">
-        <Button href="/resume">View Full Resume</Button>
+      <div className="mt-12 flex">
+        <Button href="/resume" variant="primary">
+          View Full Resume →
+        </Button>
       </div>
     </main>
   );

@@ -1,38 +1,36 @@
-import { MongoClient, type Db } from "mongodb";
+import { MongoClient, ServerApiVersion } from "mongodb";
 
-const dbName = process.env.MONGODB_DB ?? "portfolio";
+const uri = process.env.MONGODB_URI;
+const options = {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: false,
+    deprecationErrors: true,
+  },
+  connectTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 5000,
+};
+
+let client: MongoClient;
+let clientPromise: Promise<MongoClient>;
 
 declare global {
+  // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-function connect(): Promise<MongoClient> {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    return Promise.reject(new Error("MONGODB_URI is not set"));
+if (!uri) {
+  // If no URI is provided, create a rejected promise so portfolio-db can gracefully catch and fallback
+  clientPromise = Promise.reject(new Error("MONGODB_URI environment variable is not defined"));
+} else if (process.env.NODE_ENV === "development") {
+  if (!global._mongoClientPromise) {
+    client = new MongoClient(uri, options);
+    global._mongoClientPromise = client.connect();
   }
-  const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
-  return client.connect();
+  clientPromise = global._mongoClientPromise;
+} else {
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect();
 }
 
-// In dev, Next.js reloads modules on every HMR pass, so the promise is
-// cached on `global` to keep re-using the same connection across reloads.
-let clientPromise: Promise<MongoClient> | undefined;
-
-export function getMongoClient(): Promise<MongoClient> {
-  if (process.env.NODE_ENV === "development") {
-    if (!global._mongoClientPromise) {
-      global._mongoClientPromise = connect();
-    }
-    return global._mongoClientPromise;
-  }
-  if (!clientPromise) {
-    clientPromise = connect();
-  }
-  return clientPromise;
-}
-
-export async function getDb(): Promise<Db> {
-  const client = await getMongoClient();
-  return client.db(dbName);
-}
+export default clientPromise;

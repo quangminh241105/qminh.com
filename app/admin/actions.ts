@@ -1,8 +1,14 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createSessionToken, verifyAdminKey, verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import {
+  SESSION_COOKIE_NAME,
+  signSession,
+  verifyAdminPassword,
+  isAuthenticatedAdmin,
+} from "@/lib/auth";
 import {
   updateProfile,
   upsertProject,
@@ -13,99 +19,162 @@ import {
   deleteSkill,
   upsertResumeItem,
   deleteResumeItem,
-  type ProfileDoc,
-  type ProjectDoc,
-  type ArticleDoc,
-  type SkillDoc,
-  type ResumeItemDoc,
 } from "@/lib/portfolio-db";
 
-async function requireSession(): Promise<void> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (!verifySessionToken(token)) {
-    throw new Error("Unauthorized");
-  }
-}
-
-function revalidateAll(): void {
-  // Root layout wraps every route, so this refreshes all public pages
-  // (including dynamic /projects/[slug] and /blog/[slug]) in one call.
-  revalidatePath("/", "layout");
-}
-
-export async function loginAction(password: string): Promise<{ ok: boolean; message?: string }> {
-  if (!verifyAdminKey(password)) {
-    return { ok: false, message: "Invalid credentials" };
+export async function loginAdminAction(prevState: any, formData: FormData) {
+  const password = formData.get("password") as string;
+  if (!password || !verifyAdminPassword(password)) {
+    return { error: "Invalid Admin Key / Password" };
   }
 
+  const token = await signSession({ role: "admin", loggedInAt: Date.now() });
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, createSessionToken(), {
+
+  cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge: 60 * 60 * 12,
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 
+  redirect("/admin");
+}
+
+export async function logoutAdminAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE_NAME);
+  redirect("/admin/login");
+}
+
+async function requireAuth() {
+  const isAuth = await isAuthenticatedAdmin();
+  if (!isAuth) {
+    throw new Error("Unauthorized");
+  }
+}
+
+export async function updateProfileServerAction(data: {
+  name: string;
+  profession: string;
+  tagline: string;
+  location: string;
+  quickSummary: string[];
+  about: { intro: string; background: string; interests: string[] };
+}) {
+  await requireAuth();
+  await updateProfile(data);
+  revalidatePath("/");
+  revalidatePath("/about");
+  revalidatePath("/admin");
   return { ok: true };
 }
 
-export async function logoutAction(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
-}
-
-export async function updateProfileAction(data: Omit<ProfileDoc, "updatedAt">): Promise<void> {
-  await requireSession();
-  await updateProfile(data);
-  revalidateAll();
-}
-
-export async function upsertProjectAction(data: Partial<ProjectDoc> & { id?: string }): Promise<void> {
-  await requireSession();
+export async function saveProjectServerAction(data: {
+  title: string;
+  summary: string;
+  technologies: string[];
+  repoUrl: string;
+  demoUrl: string;
+  featured: boolean;
+  pictures: string[];
+  videos: string[];
+  customVariables: Record<string, string>;
+  content: string;
+  order?: number;
+  originalTitle?: string;
+}) {
+  await requireAuth();
   await upsertProject(data);
-  revalidateAll();
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
-export async function deleteProjectAction(id: string): Promise<void> {
-  await requireSession();
-  await deleteProject(id);
-  revalidateAll();
+export async function deleteProjectServerAction(title: string) {
+  await requireAuth();
+  await deleteProject(title);
+  revalidatePath("/");
+  revalidatePath("/projects");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
-export async function upsertArticleAction(data: Partial<ArticleDoc> & { id?: string }): Promise<void> {
-  await requireSession();
+export async function saveArticleServerAction(data: {
+  title: string;
+  excerpt: string;
+  slug: string;
+  groupSlug?: string;
+  publishedAt: string;
+  content: string;
+  pictures: string[];
+  videos: string[];
+  order?: number;
+  originalSlug?: string;
+}) {
+  await requireAuth();
   await upsertArticle(data);
-  revalidateAll();
+  revalidatePath("/");
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${data.slug}`);
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
-export async function deleteArticleAction(id: string): Promise<void> {
-  await requireSession();
-  await deleteArticle(id);
-  revalidateAll();
+export async function deleteArticleServerAction(slug: string) {
+  await requireAuth();
+  await deleteArticle(slug);
+  revalidatePath("/");
+  revalidatePath("/blog");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
-export async function upsertSkillAction(data: Partial<SkillDoc> & { id?: string }): Promise<void> {
-  await requireSession();
+export async function saveSkillServerAction(data: {
+  name: string;
+  category: string;
+  level: number;
+  order?: number;
+  originalName?: string;
+}) {
+  await requireAuth();
   await upsertSkill(data);
-  revalidateAll();
+  revalidatePath("/");
+  revalidatePath("/about");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
-export async function deleteSkillAction(id: string): Promise<void> {
-  await requireSession();
-  await deleteSkill(id);
-  revalidateAll();
+export async function deleteSkillServerAction(name: string) {
+  await requireAuth();
+  await deleteSkill(name);
+  revalidatePath("/");
+  revalidatePath("/about");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
-export async function upsertResumeItemAction(data: Partial<ResumeItemDoc> & { id?: string }): Promise<void> {
-  await requireSession();
+export async function saveResumeItemServerAction(data: {
+  period: string;
+  title: string;
+  details: string;
+  order?: number;
+  originalTitle?: string;
+}) {
+  await requireAuth();
   await upsertResumeItem(data);
-  revalidateAll();
+  revalidatePath("/");
+  revalidatePath("/resume");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
-export async function deleteResumeItemAction(id: string): Promise<void> {
-  await requireSession();
-  await deleteResumeItem(id);
-  revalidateAll();
+export async function deleteResumeItemServerAction(title: string) {
+  await requireAuth();
+  await deleteResumeItem(title);
+  revalidatePath("/");
+  revalidatePath("/resume");
+  revalidatePath("/admin");
+  return { ok: true };
 }

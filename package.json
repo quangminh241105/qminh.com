@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:articles": "node --env-file-if-exists=.env.local --env-file-if-exists=.env scripts/seed-articles.mjs"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -14,11 +15,11 @@
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.24.0",
     "marked": "^18.0.6",
-    "mongodb": "^7.5.0",
+    "mongodb": "^7.6.0",
     "next": "16.2.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

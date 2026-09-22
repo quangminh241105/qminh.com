@@ -5,15 +5,12 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      // 'unsafe-inline' is required for the small inline theme-init script in
-      // app/layout.tsx (no user input reflected). Nonce-based CSP is skipped
-      // here since this Next.js version has open advisories around CSP nonce
-      // handling in the App Router.
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "media-src 'self' blob:",
+      "img-src 'self' data: blob: https:",
+      "media-src 'self' data: blob: https:",
       "font-src 'self' data:",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
       "connect-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
@@ -31,11 +28,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["qminh.com"],
-  output: "standalone",
+  allowedDevOrigins: ["qminh.com", "localhost:3000"],
   serverExternalPackages: ["mongodb"],
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
   },
   async headers() {
     return [

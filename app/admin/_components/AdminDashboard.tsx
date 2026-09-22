@@ -10,6 +10,7 @@ import { OverviewTab } from "./OverviewTab";
 import { ProfileTab } from "./ProfileTab";
 import { ProjectsTab } from "./ProjectsTab";
 import { ArticlesTab } from "./ArticlesTab";
+import { GroupsTab } from "./GroupsTab";
 import { ResumeTab } from "./ResumeTab";
 import { SkillsTab } from "./SkillsTab";
 import type { PortfolioContent } from "@/lib/portfolio-db";
@@ -19,6 +20,7 @@ const TABS = [
   { key: "profile", label: "About & Profile" },
   { key: "projects", label: "Projects" },
   { key: "articles", label: "Blog" },
+  { key: "groups", label: "Blog Groups" },
   { key: "resume", label: "Resume" },
   { key: "skills", label: "Skills" },
 ] as const;
@@ -79,7 +81,8 @@ export function AdminDashboard({ portfolio }: { portfolio: PortfolioContent }) {
         {activeTab === "overview" ? <OverviewTab portfolio={portfolio} /> : null}
         {activeTab === "profile" ? <ProfileTab portfolio={portfolio} /> : null}
         {activeTab === "projects" ? <ProjectsTab projects={portfolio.projects} /> : null}
-        {activeTab === "articles" ? <ArticlesTab articles={portfolio.articles} /> : null}
+        {activeTab === "articles" ? <ArticlesTab articles={portfolio.articles} groups={portfolio.articleGroups} /> : null}
+        {activeTab === "groups" ? <GroupsTab groups={portfolio.articleGroups} /> : null}
         {activeTab === "resume" ? <ResumeTab resume={portfolio.resume} /> : null}
         {activeTab === "skills" ? <SkillsTab skills={portfolio.skills} /> : null}
       </main>

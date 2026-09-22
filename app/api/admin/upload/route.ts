@@ -1,54 +1,82 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { NextResponse, type NextRequest } from "next/server";
-import { isAuthorizedRequest } from "@/lib/auth";
-import { UPLOAD_DIR } from "@/lib/uploads";
+import { NextRequest, NextResponse } from "next/server";
+import { isAuthenticatedAdmin } from "@/lib/auth";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
-const ALLOWED_TYPES: Record<string, { extension: string; maxBytes: number }> = {
-  "image/jpeg": { extension: "jpg", maxBytes: 8 * 1024 * 1024 },
-  "image/png": { extension: "png", maxBytes: 8 * 1024 * 1024 },
-  "image/webp": { extension: "webp", maxBytes: 8 * 1024 * 1024 },
-  "image/gif": { extension: "gif", maxBytes: 8 * 1024 * 1024 },
-  "video/mp4": { extension: "mp4", maxBytes: 100 * 1024 * 1024 },
-  "video/webm": { extension: "webm", maxBytes: 100 * 1024 * 1024 },
-};
+export const dynamic = "force-dynamic";
 
-export async function POST(request: NextRequest) {
-  if (!isAuthorizedRequest(request)) {
-    return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+const ALLOWED_MIME_TYPES = new Set([
+  // Images
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+  // Videos
+  "video/mp4",
+  "video/webm",
+  "video/ogg",
+  "video/quicktime",
+]);
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+export async function POST(req: NextRequest) {
+  const isAuth = await isAuthenticatedAdmin();
+  if (!isAuth) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get("file");
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ ok: false, message: "Missing file" }, { status: 400, headers: { "Cache-Control": "no-store" } });
-  }
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
 
-  const spec = ALLOWED_TYPES[file.type];
-  if (!spec) {
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { error: `Unsupported file type (${file.type}). Allowed: images and videos.` },
+        { status: 400 }
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File size exceeds 50MB limit." },
+        { status: 400 }
+      );
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Sanitize filename and create unique timestamped name
+    const ext = path.extname(file.name) || `.${file.type.split("/")[1]}`;
+    const baseName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const uniqueFilename = `${baseName}_${Date.now()}${ext}`;
+
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    await mkdir(uploadsDir, { recursive: true });
+
+    const filePath = path.join(uploadsDir, uniqueFilename);
+    await writeFile(filePath, buffer);
+
+    const publicUrl = `/uploads/${uniqueFilename}`;
+
+    return NextResponse.json({
+      ok: true,
+      url: publicUrl,
+      filename: uniqueFilename,
+      size: file.size,
+      type: file.type,
+    });
+  } catch (error: any) {
+    console.error("Upload error:", error);
     return NextResponse.json(
-      { ok: false, message: `Unsupported file type: ${file.type}` },
-      { status: 415, headers: { "Cache-Control": "no-store" } },
+      { error: error?.message || "Internal server error during upload" },
+      { status: 500 }
     );
   }
-
-  if (file.size > spec.maxBytes) {
-    return NextResponse.json(
-      { ok: false, message: `File exceeds the ${Math.round(spec.maxBytes / (1024 * 1024))}MB limit` },
-      { status: 413, headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
-  const filename = `${randomUUID()}.${spec.extension}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(UPLOAD_DIR, filename), bytes);
-
-  return NextResponse.json(
-    { ok: true, url: `/uploads/${filename}` },
-    { headers: { "Cache-Control": "no-store" } },
-  );
 }

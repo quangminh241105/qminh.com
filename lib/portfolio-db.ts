@@ -1,58 +1,23 @@
 import { cache } from "react";
-import { Collection, ObjectId } from "mongodb";
-import { getDb } from "@/lib/mongodb";
-import { portfolioStore, type NavItem, type SocialLink } from "@/lib/portfolio";
-import { deleteUploadedFiles } from "@/lib/uploads";
+import clientPromise from "@/lib/mongodb";
+import {
+  portfolioStore,
+  Skill,
+  Project,
+  Testimonial,
+  Article,
+  ArticleGroup,
+  ResumeItem,
+  type NavItem,
+  type SocialLink,
+} from "@/lib/portfolio";
+import type { Db } from "mongodb";
 
-export type AboutSection = {
+type AboutSection = {
   intro: string;
   background: string;
   interests: string[];
 };
-
-export type ProfileDoc = {
-  name: string;
-  profession: string;
-  tagline: string;
-  location: string;
-  navItems: NavItem[];
-  socialLinks: SocialLink[];
-  quickSummary: string[];
-  about: AboutSection;
-  updatedAt: Date;
-};
-
-export type SkillDoc = { name: string; category: string; level: number; order: number };
-
-export type ProjectDoc = {
-  title: string;
-  summary: string;
-  technologies: string[];
-  repoUrl: string;
-  demoUrl: string;
-  featured: boolean;
-  order: number;
-  images?: string[];
-  videoUrl?: string;
-  customVars?: Record<string, string>;
-};
-
-export type TestimonialDoc = { quote: string; author: string; role: string; order: number };
-
-export type ArticleDoc = {
-  title: string;
-  excerpt: string;
-  slug: string;
-  publishedAt: string;
-  order: number;
-  body?: string;
-  coverImage?: string;
-  videoUrl?: string;
-};
-
-export type ResumeItemDoc = { period: string; title: string; details: string; order: number };
-
-export type WithId<T> = T & { id: string };
 
 export type PortfolioContent = {
   name: string;
@@ -63,58 +28,279 @@ export type PortfolioContent = {
   socialLinks: SocialLink[];
   quickSummary: string[];
   about: AboutSection;
-  skills: WithId<SkillDoc>[];
-  projects: WithId<ProjectDoc & { primaryTechnology: string }>[];
-  featuredProjects: WithId<ProjectDoc & { primaryTechnology: string }>[];
-  testimonials: WithId<TestimonialDoc>[];
-  articles: WithId<ArticleDoc>[];
-  resume: WithId<ResumeItemDoc>[];
+  skills: Skill[];
+  projects: Project[];
+  featuredProjects: Project[];
+  testimonials: Testimonial[];
+  articles: Article[];
+  articleGroups: ArticleGroup[];
+  resume: ResumeItem[];
   source: "db" | "fallback";
 };
 
-function withId<T extends { _id?: ObjectId }>(doc: T): WithId<Omit<T, "_id">> {
-  const { _id, ...rest } = doc;
-  return { ...rest, id: _id!.toString() } as WithId<Omit<T, "_id">>;
+let bootstrapped = false;
+
+function withInstagramLink(socialLinks: SocialLink[]): SocialLink[] {
+  if (socialLinks.some((link) => link.label.toLowerCase().includes("instagram"))) {
+    return socialLinks;
+  }
+
+  return [...socialLinks, { label: "Instagram", href: "https://www.instagram.com/" }];
 }
 
-async function collections() {
-  const db = await getDb();
-  return {
-    profile: db.collection<ProfileDoc>("profile"),
-    skills: db.collection<SkillDoc>("skills"),
-    projects: db.collection<ProjectDoc>("projects"),
-    testimonials: db.collection<TestimonialDoc>("testimonials"),
-    articles: db.collection<ArticleDoc>("articles"),
-    resumeItems: db.collection<ResumeItemDoc>("resumeItems"),
-  };
+async function getDb(): Promise<Db> {
+  const client = await clientPromise;
+  return client.db(process.env.MONGODB_DB || "portfolio");
 }
 
-let bootstrapPromise: Promise<void> | undefined;
-
-async function seedIfEmpty<T extends object>(collection: Collection<T>, seed: T[]) {
-  if (seed.length === 0) return;
-  const count = await collection.estimatedDocumentCount();
-  if (count === 0) {
-    await collection.insertMany(seed as never[]);
+export async function checkDbHealth(): Promise<{ ok: boolean; database: string; message: string }> {
+  try {
+    const db = await getDb();
+    await db.command({ ping: 1 });
+    return {
+      ok: true,
+      database: db.databaseName,
+      message: "MongoDB connection is healthy.",
+    };
+  } catch (error: any) {
+    return {
+      ok: false,
+      database: process.env.MONGODB_DB || "portfolio",
+      message: error?.message || "Failed to connect to MongoDB",
+    };
   }
 }
 
-/** Creates missing collections/indexes and seeds from lib/portfolio.ts on first run. */
-async function bootstrap(): Promise<void> {
-  const cols = await collections();
+async function ensureBootstrapped(db: Db) {
+  if (bootstrapped) return;
 
-  await Promise.all([
-    cols.skills.createIndex({ order: 1 }),
-    cols.projects.createIndex({ featured: 1, order: 1 }),
-    cols.articles.createIndex({ slug: 1 }, { unique: true }),
-    cols.articles.createIndex({ order: 1 }),
-    cols.resumeItems.createIndex({ order: 1 }),
-    cols.testimonials.createIndex({ order: 1 }),
-  ]);
+  try {
+    const collections = await db.listCollections().toArray();
+    const names = new Set(collections.map((c) => c.name));
 
-  const profileCount = await cols.profile.estimatedDocumentCount();
-  if (profileCount === 0) {
-    await cols.profile.insertOne({
+    // Profile
+    if (!names.has("profile")) {
+      await db.createCollection("profile");
+    }
+    const profileCount = await db.collection("profile").countDocuments();
+    if (profileCount === 0) {
+      await db.collection("profile").insertOne({
+        name: portfolioStore.name,
+        profession: portfolioStore.profession,
+        tagline: portfolioStore.tagline,
+        location: portfolioStore.location,
+        navItems: portfolioStore.navItems,
+        socialLinks: portfolioStore.socialLinks,
+        quickSummary: portfolioStore.quickSummary,
+        about: portfolioStore.about,
+        updatedAt: new Date(),
+      });
+    }
+
+    // Skills
+    if (!names.has("skills")) {
+      await db.createCollection("skills");
+    }
+    const skillsCount = await db.collection("skills").countDocuments();
+    if (skillsCount === 0) {
+      await db.collection("skills").insertMany(
+        portfolioStore.skills.map((s, idx) => ({
+          name: s.name,
+          category: s.category,
+          level: s.level,
+          order: idx,
+        }))
+      );
+    }
+    await db.collection("skills").createIndex({ order: 1 });
+    await db.collection("skills").createIndex({ name: 1 }, { unique: true });
+
+    // Projects
+    if (!names.has("projects")) {
+      await db.createCollection("projects");
+    }
+    const projectsCount = await db.collection("projects").countDocuments();
+    if (projectsCount === 0) {
+      await db.collection("projects").insertMany(
+        portfolioStore.projects.map((p, idx) => ({
+          title: p.title,
+          summary: p.summary,
+          technologies: p.technologies,
+          repoUrl: p.repoUrl,
+          demoUrl: p.demoUrl,
+          featured: p.featured,
+          pictures: p.pictures,
+          videos: p.videos,
+          customVariables: p.customVariables,
+          content: p.content,
+          order: idx,
+        }))
+      );
+    }
+    await db.collection("projects").createIndex({ order: 1 });
+    await db.collection("projects").createIndex({ title: 1 }, { unique: true });
+
+    // Testimonials
+    if (!names.has("testimonials")) {
+      await db.createCollection("testimonials");
+    }
+    const testCount = await db.collection("testimonials").countDocuments();
+    if (testCount === 0) {
+      await db.collection("testimonials").insertMany(
+        portfolioStore.testimonials.map((t, idx) => ({
+          quote: t.quote,
+          author: t.author,
+          role: t.role,
+          order: idx,
+        }))
+      );
+    }
+
+    // Articles
+    if (!names.has("articles")) {
+      await db.createCollection("articles");
+    }
+    const articleCount = await db.collection("articles").countDocuments();
+    if (articleCount === 0) {
+      await db.collection("articles").insertMany(
+        portfolioStore.articles.map((a, idx) => ({
+          title: a.title,
+          excerpt: a.excerpt,
+          slug: a.slug,
+          groupSlug: a.groupSlug,
+          publishedAt: a.publishedAt,
+          content: a.content,
+          pictures: a.pictures,
+          videos: a.videos,
+          order: idx,
+        }))
+      );
+    }
+    await db.collection("articles").createIndex({ slug: 1 }, { unique: true });
+    await db.collection("articles").createIndex({ order: 1 });
+
+    // Resume
+    if (!names.has("resumeItems")) {
+      await db.createCollection("resumeItems");
+    }
+    const resumeCount = await db.collection("resumeItems").countDocuments();
+    if (resumeCount === 0) {
+      await db.collection("resumeItems").insertMany(
+        portfolioStore.resume.map((r, idx) => ({
+          period: r.period,
+          title: r.title,
+          details: r.details,
+          order: idx,
+        }))
+      );
+    }
+    await db.collection("resumeItems").createIndex({ order: 1 });
+
+    bootstrapped = true;
+  } catch (err) {
+    console.warn("MongoDB auto-bootstrap error (will proceed with fallback):", err);
+  }
+}
+
+export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => {
+  try {
+    const db = await getDb();
+    await ensureBootstrapped(db);
+
+    const [profileDoc, dbSkills, dbProjects, dbTestimonials, dbArticles, dbResume] = await Promise.all([
+      db.collection("profile").findOne({}, { sort: { updatedAt: -1 } }),
+      db.collection("skills").find().sort({ order: 1 }).toArray(),
+      db.collection("projects").find().sort({ order: 1 }).toArray(),
+      db.collection("testimonials").find().sort({ order: 1 }).toArray(),
+      db.collection("articles").find().sort({ order: 1 }).toArray(),
+      db.collection("resumeItems").find().sort({ order: 1 }).toArray(),
+    ]);
+
+    if (!profileDoc) {
+      throw new Error("No profile document found in MongoDB");
+    }
+
+    const plainSkills = dbSkills.map((s: any) => ({
+      name: s.name,
+      category: s.category,
+      level: s.level,
+      order: s.order,
+    }));
+
+    const plainProjects = dbProjects.map((p: any) => {
+      const technologies = Array.isArray(p.technologies) ? p.technologies : [];
+      return {
+        title: p.title,
+        summary: p.summary,
+        technologies,
+        repoUrl: p.repoUrl || "",
+        demoUrl: p.demoUrl || "",
+        featured: Boolean(p.featured),
+        pictures: Array.isArray(p.pictures) ? p.pictures : [],
+        videos: Array.isArray(p.videos) ? p.videos : [],
+        customVariables:
+          typeof p.customVariables === "object" && p.customVariables !== null ? p.customVariables : {},
+        content: p.content || "",
+        order: p.order,
+        primaryTechnology: technologies[0] ?? "General",
+      };
+    });
+
+    const plainTestimonials = dbTestimonials.map((t: any) => ({
+      quote: t.quote,
+      author: t.author,
+      role: t.role,
+      order: t.order,
+    }));
+
+    const plainArticles = dbArticles.map((a: any) => ({
+      title: a.title,
+      excerpt: a.excerpt,
+      slug: a.slug,
+      groupSlug: a.groupSlug || "engineering-notes",
+      publishedAt: a.publishedAt,
+      content: a.content || "",
+      pictures: Array.isArray(a.pictures) ? a.pictures : [],
+      videos: Array.isArray(a.videos) ? a.videos : [],
+      order: a.order,
+    }));
+
+    const plainResume = dbResume.map((r: any) => ({
+      period: r.period,
+      title: r.title,
+      details: r.details,
+      order: r.order,
+    }));
+
+    return {
+      name: profileDoc.name || portfolioStore.name,
+      profession: profileDoc.profession || portfolioStore.profession,
+      tagline: profileDoc.tagline || portfolioStore.tagline,
+      location: profileDoc.location || portfolioStore.location,
+      navItems: Array.isArray(profileDoc.navItems) ? profileDoc.navItems : [...portfolioStore.navItems],
+      socialLinks: withInstagramLink(
+        Array.isArray(profileDoc.socialLinks) ? profileDoc.socialLinks : [...portfolioStore.socialLinks],
+      ),
+      quickSummary: Array.isArray(profileDoc.quickSummary) ? profileDoc.quickSummary : [...portfolioStore.quickSummary],
+      about: profileDoc.about || { ...portfolioStore.about },
+      skills: plainSkills,
+      projects: plainProjects,
+      featuredProjects: plainProjects.filter((p) => p.featured),
+      testimonials: plainTestimonials,
+      articles: plainArticles,
+      articleGroups: portfolioStore.articleGroups.map((group) => ({ ...group })),
+      resume: plainResume,
+      source: "db",
+    };
+  } catch (error) {
+    console.warn("MongoDB fetch failed, serving static fallback:", error);
+    const plainSkills = portfolioStore.skills.map((item) => ({ ...item }));
+    const plainProjects = portfolioStore.projects.map((item) => ({ ...item, primaryTechnology: item.technologies[0] ?? "General" }));
+    const plainTestimonials = portfolioStore.testimonials.map((item) => ({ ...item }));
+    const plainArticles = portfolioStore.articles.map((item) => ({ ...item }));
+    const plainResume = portfolioStore.resume.map((item) => ({ ...item }));
+
+    return {
       name: portfolioStore.name,
       profession: portfolioStore.profession,
       tagline: portfolioStore.tagline,
@@ -123,281 +309,180 @@ async function bootstrap(): Promise<void> {
       socialLinks: [...portfolioStore.socialLinks],
       quickSummary: [...portfolioStore.quickSummary],
       about: { ...portfolioStore.about },
-      updatedAt: new Date(),
-    });
-  }
-
-  await Promise.all([
-    seedIfEmpty(
-      cols.skills,
-      portfolioStore.skills.map((s, order) => ({ name: s.name, category: s.category, level: s.level, order })),
-    ),
-    seedIfEmpty(
-      cols.projects,
-      portfolioStore.projects.map((p, order) => ({
-        title: p.title,
-        summary: p.summary,
-        technologies: [...p.technologies],
-        repoUrl: p.repoUrl,
-        demoUrl: p.demoUrl,
-        featured: p.featured,
-        order,
-      })),
-    ),
-    seedIfEmpty(
-      cols.testimonials,
-      portfolioStore.testimonials.map((t, order) => ({ quote: t.quote, author: t.author, role: t.role, order })),
-    ),
-    seedIfEmpty(
-      cols.articles,
-      portfolioStore.articles.map((a, order) => ({
-        title: a.title,
-        excerpt: a.excerpt,
-        slug: a.slug,
-        publishedAt: a.publishedAt,
-        order,
-      })),
-    ),
-    seedIfEmpty(
-      cols.resumeItems,
-      portfolioStore.resume.map((r, order) => ({ period: r.period, title: r.title, details: r.details, order })),
-    ),
-  ]);
-}
-
-function ensureBootstrapped(): Promise<void> {
-  if (!bootstrapPromise) {
-    bootstrapPromise = bootstrap().catch((error) => {
-      // Allow bootstrap to be retried on the next call instead of caching a failure forever.
-      bootstrapPromise = undefined;
-      throw error;
-    });
-  }
-  return bootstrapPromise;
-}
-
-function fallbackContent(): PortfolioContent {
-  const plainProjects = portfolioStore.projects.map((item, index) => ({
-    ...item,
-    id: `fallback-project-${index}`,
-    technologies: [...item.technologies],
-    order: index,
-    primaryTechnology: item.primaryTechnology,
-  }));
-
-  return {
-    name: portfolioStore.name,
-    profession: portfolioStore.profession,
-    tagline: portfolioStore.tagline,
-    location: portfolioStore.location,
-    navItems: [...portfolioStore.navItems],
-    socialLinks: [...portfolioStore.socialLinks],
-    quickSummary: [...portfolioStore.quickSummary],
-    about: { ...portfolioStore.about },
-    skills: portfolioStore.skills.map((item, index) => ({ ...item, id: `fallback-skill-${index}`, order: index })),
-    projects: plainProjects,
-    featuredProjects: plainProjects.filter((p) => p.featured),
-    testimonials: portfolioStore.testimonials.map((item, index) => ({
-      ...item,
-      id: `fallback-testimonial-${index}`,
-      order: index,
-    })),
-    articles: portfolioStore.articles.map((item, index) => ({ ...item, id: `fallback-article-${index}`, order: index })),
-    resume: portfolioStore.resume.map((item, index) => ({ ...item, id: `fallback-resume-${index}`, order: index })),
-    source: "fallback",
-  };
-}
-
-export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => {
-  try {
-    await ensureBootstrapped();
-    const cols = await collections();
-
-    const [profile, skills, projects, testimonials, articles, resumeItems] = await Promise.all([
-      cols.profile.find().sort({ updatedAt: -1 }).limit(1).next(),
-      cols.skills.find().sort({ order: 1 }).toArray(),
-      cols.projects.find().sort({ order: 1 }).toArray(),
-      cols.testimonials.find().sort({ order: 1 }).toArray(),
-      cols.articles.find().sort({ order: 1 }).toArray(),
-      cols.resumeItems.find().sort({ order: 1 }).toArray(),
-    ]);
-
-    if (!profile) {
-      throw new Error("No profile document found after bootstrap");
-    }
-
-    const plainProjects = projects.map((doc) => {
-      const mapped = withId(doc);
-      return { ...mapped, primaryTechnology: mapped.technologies[0] ?? "General" };
-    });
-
-    return {
-      name: profile.name,
-      profession: profile.profession,
-      tagline: profile.tagline,
-      location: profile.location,
-      navItems: profile.navItems,
-      socialLinks: profile.socialLinks,
-      quickSummary: profile.quickSummary,
-      about: profile.about,
-      skills: skills.map(withId),
+      skills: plainSkills,
       projects: plainProjects,
       featuredProjects: plainProjects.filter((p) => p.featured),
-      testimonials: testimonials.map(withId),
-      articles: articles.map(withId),
-      resume: resumeItems.map(withId),
-      source: "db",
+      testimonials: plainTestimonials,
+      articles: plainArticles,
+      articleGroups: portfolioStore.articleGroups.map((group) => ({ ...group })),
+      resume: plainResume,
+      source: "fallback",
     };
-  } catch (error) {
-    console.error("[portfolio-db] Falling back to static content:", error);
-    return fallbackContent();
   }
 });
 
-// ---- Admin write helpers -------------------------------------------------
-// Every write helper is called from app/admin/actions.ts, which re-verifies
-// the admin session before invoking any of these.
-
-export async function updateProfile(data: Omit<ProfileDoc, "updatedAt">): Promise<void> {
-  const cols = await collections();
-  await cols.profile.insertOne({ ...data, updatedAt: new Date() });
+// Admin DB Mutators
+export async function updateProfile(data: {
+  name: string;
+  profession: string;
+  tagline: string;
+  location: string;
+  quickSummary: string[];
+  about: { intro: string; background: string; interests: string[] };
+}) {
+  const db = await getDb();
+  await db.collection("profile").updateOne(
+    {},
+    {
+      $set: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    },
+    { upsert: true }
+  );
 }
 
-async function nextOrder<T extends { order: number }>(collection: Collection<T>): Promise<number> {
-  const last = await collection.find().sort({ order: -1 }).limit(1).next();
-  return (last?.order ?? -1) + 1;
+export async function upsertProject(project: {
+  title: string;
+  summary: string;
+  technologies: string[];
+  repoUrl: string;
+  demoUrl: string;
+  featured: boolean;
+  pictures?: string[];
+  videos?: string[];
+  customVariables?: Record<string, string>;
+  content?: string;
+  order?: number;
+  originalTitle?: string;
+}) {
+  const db = await getDb();
+  const searchKey = project.originalTitle || project.title;
+  const count = await db.collection("projects").countDocuments();
+
+  await db.collection("projects").updateOne(
+    { title: searchKey },
+    {
+      $set: {
+        title: project.title,
+        summary: project.summary,
+        technologies: project.technologies,
+        repoUrl: project.repoUrl,
+        demoUrl: project.demoUrl,
+        featured: project.featured,
+        pictures: project.pictures || [],
+        videos: project.videos || [],
+        customVariables: project.customVariables || {},
+        content: project.content || "",
+        order: typeof project.order === "number" ? project.order : count,
+      },
+    },
+    { upsert: true }
+  );
 }
 
-/** Images present in `oldItems` but dropped from `newItems` (undefined newItems means "field wasn't touched"). */
-function removedArrayItems(oldItems: string[] | undefined, newItems: string[] | undefined): string[] {
-  if (!newItems) return [];
-  return (oldItems ?? []).filter((item) => !newItems.includes(item));
+export async function deleteProject(title: string) {
+  const db = await getDb();
+  await db.collection("projects").deleteOne({ title });
 }
 
-/** The old single-file URL, if the update is replacing it with a different one. */
-function replacedSingleFile(oldValue: string | undefined, newValue: string | undefined): string | undefined {
-  if (newValue === undefined || !oldValue || oldValue === newValue) return undefined;
-  return oldValue;
+export async function upsertArticle(article: {
+  title: string;
+  excerpt: string;
+  slug: string;
+  groupSlug?: string;
+  publishedAt: string;
+  content: string;
+  pictures?: string[];
+  videos?: string[];
+  order?: number;
+  originalSlug?: string;
+}) {
+  const db = await getDb();
+  const searchKey = article.originalSlug || article.slug;
+  const count = await db.collection("articles").countDocuments();
+
+  await db.collection("articles").updateOne(
+    { slug: searchKey },
+    {
+      $set: {
+        title: article.title,
+        excerpt: article.excerpt,
+        slug: article.slug,
+        groupSlug: article.groupSlug || "engineering-notes",
+        publishedAt: article.publishedAt,
+        content: article.content,
+        pictures: article.pictures || [],
+        videos: article.videos || [],
+        order: typeof article.order === "number" ? article.order : count,
+      },
+    },
+    { upsert: true }
+  );
 }
 
-export async function upsertProject(data: Partial<ProjectDoc> & { id?: string }): Promise<void> {
-  const cols = await collections();
-  const { id, ...fields } = data;
-  if (id) {
-    const existing = await cols.projects.findOne({ _id: new ObjectId(id) });
-    await cols.projects.updateOne({ _id: new ObjectId(id) }, { $set: fields });
-    // Clean up files that this edit just removed or replaced, so disk usage
-    // doesn't grow unbounded every time an image/video is swapped out.
-    await deleteUploadedFiles([
-      ...removedArrayItems(existing?.images, fields.images),
-      replacedSingleFile(existing?.videoUrl, fields.videoUrl),
-    ]);
-  } else {
-    const order = fields.order ?? (await nextOrder(cols.projects));
-    await cols.projects.insertOne({
-      title: fields.title ?? "Untitled Project",
-      summary: fields.summary ?? "",
-      technologies: fields.technologies ?? [],
-      repoUrl: fields.repoUrl ?? "",
-      demoUrl: fields.demoUrl ?? "",
-      featured: fields.featured ?? false,
-      order,
-      ...(fields.images ? { images: fields.images } : {}),
-      ...(fields.videoUrl ? { videoUrl: fields.videoUrl } : {}),
-      ...(fields.customVars ? { customVars: fields.customVars } : {}),
-    });
-  }
+export async function deleteArticle(slug: string) {
+  const db = await getDb();
+  await db.collection("articles").deleteOne({ slug });
 }
 
-export async function deleteProject(id: string): Promise<void> {
-  const cols = await collections();
-  const deleted = await cols.projects.findOneAndDelete({ _id: new ObjectId(id) });
-  if (deleted) {
-    await deleteUploadedFiles([...(deleted.images ?? []), deleted.videoUrl]);
-  }
+export async function upsertSkill(skill: {
+  name: string;
+  category: string;
+  level: number;
+  order?: number;
+  originalName?: string;
+}) {
+  const db = await getDb();
+  const searchKey = skill.originalName || skill.name;
+  const count = await db.collection("skills").countDocuments();
+
+  await db.collection("skills").updateOne(
+    { name: searchKey },
+    {
+      $set: {
+        name: skill.name,
+        category: skill.category,
+        level: skill.level,
+        order: typeof skill.order === "number" ? skill.order : count,
+      },
+    },
+    { upsert: true }
+  );
 }
 
-export async function upsertArticle(data: Partial<ArticleDoc> & { id?: string }): Promise<void> {
-  const cols = await collections();
-  const { id, ...fields } = data;
-  if (id) {
-    const existing = await cols.articles.findOne({ _id: new ObjectId(id) });
-    await cols.articles.updateOne({ _id: new ObjectId(id) }, { $set: fields });
-    await deleteUploadedFiles([
-      replacedSingleFile(existing?.coverImage, fields.coverImage),
-      replacedSingleFile(existing?.videoUrl, fields.videoUrl),
-    ]);
-  } else {
-    const order = fields.order ?? (await nextOrder(cols.articles));
-    await cols.articles.insertOne({
-      title: fields.title ?? "Untitled Article",
-      excerpt: fields.excerpt ?? "",
-      slug: fields.slug ?? `article-${Date.now()}`,
-      publishedAt: fields.publishedAt ?? new Date().toISOString().slice(0, 10),
-      order,
-      ...(fields.body ? { body: fields.body } : {}),
-      ...(fields.coverImage ? { coverImage: fields.coverImage } : {}),
-      ...(fields.videoUrl ? { videoUrl: fields.videoUrl } : {}),
-    });
-  }
+export async function deleteSkill(name: string) {
+  const db = await getDb();
+  await db.collection("skills").deleteOne({ name });
 }
 
-export async function deleteArticle(id: string): Promise<void> {
-  const cols = await collections();
-  const deleted = await cols.articles.findOneAndDelete({ _id: new ObjectId(id) });
-  if (deleted) {
-    await deleteUploadedFiles([deleted.coverImage, deleted.videoUrl]);
-  }
+export async function upsertResumeItem(item: {
+  period: string;
+  title: string;
+  details: string;
+  order?: number;
+  originalTitle?: string;
+}) {
+  const db = await getDb();
+  const searchKey = item.originalTitle || item.title;
+  const count = await db.collection("resumeItems").countDocuments();
+
+  await db.collection("resumeItems").updateOne(
+    { title: searchKey },
+    {
+      $set: {
+        period: item.period,
+        title: item.title,
+        details: item.details,
+        order: typeof item.order === "number" ? item.order : count,
+      },
+    },
+    { upsert: true }
+  );
 }
 
-export async function upsertSkill(data: Partial<SkillDoc> & { id?: string }): Promise<void> {
-  const cols = await collections();
-  const { id, ...fields } = data;
-  if (id) {
-    await cols.skills.updateOne({ _id: new ObjectId(id) }, { $set: fields });
-  } else {
-    const order = fields.order ?? (await nextOrder(cols.skills));
-    await cols.skills.insertOne({
-      name: fields.name ?? "Untitled Skill",
-      category: fields.category ?? "General",
-      level: fields.level ?? 50,
-      order,
-    });
-  }
-}
-
-export async function deleteSkill(id: string): Promise<void> {
-  const cols = await collections();
-  await cols.skills.deleteOne({ _id: new ObjectId(id) });
-}
-
-export async function upsertResumeItem(data: Partial<ResumeItemDoc> & { id?: string }): Promise<void> {
-  const cols = await collections();
-  const { id, ...fields } = data;
-  if (id) {
-    await cols.resumeItems.updateOne({ _id: new ObjectId(id) }, { $set: fields });
-  } else {
-    const order = fields.order ?? (await nextOrder(cols.resumeItems));
-    await cols.resumeItems.insertOne({
-      period: fields.period ?? "",
-      title: fields.title ?? "Untitled Entry",
-      details: fields.details ?? "",
-      order,
-    });
-  }
-}
-
-export async function deleteResumeItem(id: string): Promise<void> {
-  const cols = await collections();
-  await cols.resumeItems.deleteOne({ _id: new ObjectId(id) });
-}
-
-export async function pingDatabase(): Promise<{ ok: true; database: string } | { ok: false; error: string }> {
-  try {
-    const db = await getDb();
-    await db.command({ ping: 1 });
-    return { ok: true, database: db.databaseName };
-  } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Unknown error" };
-  }
+export async function deleteResumeItem(title: string) {
+  const db = await getDb();
+  await db.collection("resumeItems").deleteOne({ title });
 }

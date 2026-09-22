@@ -1,0 +1,74 @@
+{
+  "group": {
+    "name": "Linux for Newbies",
+    "slug": "linux-for-newbies",
+    "description": "A beginner-friendly series that walks new users through core Linux concepts, from installation to your first shell script.",
+    "order": 1
+  },
+  "articles": [
+    {
+      "title": "What Is Linux and Why Should You Learn It?",
+      "slug": "what-is-linux",
+      "excerpt": "A quick tour of what Linux actually is, where you'll find it running, and why it's worth learning even if you'll never touch a server.",
+      "publishedAt": "2026-01-05",
+      "order": 0,
+      "body": "## What Is Linux?\n\nLinux is a free, open-source operating system kernel, first released by Linus Torvalds in 1991. Paired with GNU tools and a package manager, it forms a complete OS - usually called a **Linux distribution** (or *distro* for short), like Ubuntu, Debian, or Fedora.\n\n## Where You'll Find It\n\n- Most of the internet's servers and cloud infrastructure (AWS, Google Cloud, Azure)\n- Android phones (built on the Linux kernel)\n- Embedded devices: routers, smart TVs, cars\n- A growing share of developer laptops and desktops\n\n## Why Learn It\n\n- **Free and open source** - no license fees, and you can inspect or modify anything.\n- **Industry standard for servers** - if you're going into software, DevOps, or system administration, you'll use it constantly.\n- **Powerful command line** - once you're comfortable with the terminal, many tasks become faster than clicking through a GUI.\n- **Great for learning how computers actually work** - Linux doesn't hide as much from you as other operating systems do.\n\nIn the rest of this series we'll install a distro, learn to navigate the filesystem, run essential commands, manage permissions and packages, and write your first shell script."
+    },
+    {
+      "title": "Installing Linux: Choosing Your First Distro",
+      "slug": "installing-linux-choosing-a-distro",
+      "excerpt": "Overwhelmed by the hundreds of Linux distributions out there? Here's how to pick one and get it running - no risk to your current OS required.",
+      "publishedAt": "2026-01-08",
+      "order": 1,
+      "body": "## Picking a Distro\n\nFor a first distro, prioritize a large community and beginner-friendly defaults:\n\n- **Ubuntu** - the most popular beginner distro, huge community, tons of tutorials.\n- **Linux Mint** - Ubuntu-based, feels closer to a traditional desktop.\n- **Fedora** - great if you want newer software and a taste of what Red Hat-based systems look like.\n\n## Try It Without Installing Anything\n\nYou don't have to commit right away:\n\n1. **Live USB** - download an ISO, flash it to a USB drive with a tool like Rufus or balenaEtcher, and boot from it. Nothing touches your hard drive unless you choose to install.\n2. **Virtual machine** - install VirtualBox or VMware and run Linux inside a window on your current OS. Perfect for safe experimentation.\n3. **WSL (Windows Subsystem for Linux)** - if you're on Windows, `wsl --install` gets you a real Linux environment without leaving Windows.\n\n## A Minimal Install Checklist\n\n- Back up anything important first.\n- Download the ISO and verify its checksum.\n- Create bootable media (or just use a VM).\n- Boot, follow the installer, pick a username/password you'll remember.\n- Update the system immediately after first boot.\n\nOnce you're in, open a terminal - that's where the next lesson picks up."
+    },
+    {
+      "title": "Navigating the Linux Filesystem",
+      "slug": "navigating-the-linux-filesystem",
+      "excerpt": "Everything in Linux is a file - here's the folder structure you'll actually need to know, and the commands to move around it.",
+      "publishedAt": "2026-01-12",
+      "order": 2,
+      "body": "## The Filesystem Tree\n\nLinux organizes everything under a single root directory, `/`. There's no `C:\\` - just one tree.\n\n| Path | Purpose |\n| --- | --- |\n| `/home/<user>` | Your personal files, like `C:\\Users\\<name>` |\n| `/etc` | System-wide configuration files |\n| `/var` | Logs, caches, and other variable data |\n| `/bin`, `/usr/bin` | Executable programs |\n| `/tmp` | Temporary files, cleared on reboot |\n| `/root` | The root (admin) user's home directory |\n\n## Core Navigation Commands\n\n```bash\npwd          # print working directory - where am I?\nls           # list files in the current directory\nls -la       # list all files, including hidden ones, in long format\ncd Documents # change into the Documents directory\ncd ..        # go up one directory\ncd ~         # jump straight to your home directory\ncd -         # jump back to the previous directory\n```\n\n## Absolute vs Relative Paths\n\n- **Absolute**: starts from `/`, e.g. `/home/minh/notes.txt` - always points to the same place.\n- **Relative**: starts from where you currently are, e.g. `notes.txt` or `../notes.txt`.\n\n## Useful Shortcuts\n\n- `.` means the current directory\n- `..` means the parent directory\n- `~` means your home directory\n\nSpend a few minutes just wandering around your filesystem with `ls` and `cd` - it's the fastest way to build a mental map of the system."
+    },
+    {
+      "title": "Essential Linux Terminal Commands for Beginners",
+      "slug": "essential-terminal-commands",
+      "excerpt": "The dozen or so commands that cover almost everything you'll do in a terminal during your first month with Linux.",
+      "publishedAt": "2026-01-16",
+      "order": 3,
+      "body": "## File & Directory Basics\n\n```bash\ntouch notes.txt        # create an empty file\nmkdir projects         # create a directory\ncp notes.txt backup.txt  # copy a file\nmv backup.txt archive/   # move (or rename) a file\nrm old-notes.txt       # delete a file\nrm -r old-folder       # delete a directory and its contents\n```\n\n## Reading Files\n\n```bash\ncat notes.txt      # print the whole file\nless notes.txt     # scroll through a file page by page (q to quit)\nhead -n 20 log.txt # first 20 lines\ntail -n 20 log.txt # last 20 lines\ntail -f log.txt    # follow a file live as it grows (great for logs)\n```\n\n## Finding Things\n\n```bash\ngrep \"error\" log.txt        # search for a word inside a file\nfind . -name \"*.txt\"        # find files by name under the current directory\nwhich python3               # show where a command is installed\n```\n\n## Processes\n\n```bash\nps aux          # list running processes\ntop             # live view of process/CPU/memory usage\nkill 1234       # stop the process with PID 1234\n```\n\n## Getting Help\n\n```bash\nman ls        # the manual page for a command\nls --help     # a quick usage summary\n```\n\nYou won't memorize all of this at once - keep `man` and `--help` close and look things up as you go. That's normal, even for experienced users."
+    },
+    {
+      "title": "Understanding File Permissions in Linux",
+      "slug": "understanding-file-permissions",
+      "excerpt": "Why is 'permission denied' the first error every Linux beginner hits? Here's what those rwx letters actually mean and how to fix it safely.",
+      "publishedAt": "2026-01-20",
+      "order": 4,
+      "body": "## Reading `ls -l` Output\n\n```bash\n$ ls -l notes.txt\n-rw-r--r-- 1 minh minh 128 Jan 20 10:00 notes.txt\n```\n\nThe first column breaks down like this:\n\n- Position 1: file type (`-` = regular file, `d` = directory, `l` = symlink)\n- Positions 2-4: **owner** permissions (`rw-`)\n- Positions 5-7: **group** permissions (`r--`)\n- Positions 8-10: **everyone else** permissions (`r--`)\n\n`r` = read, `w` = write, `x` = execute.\n\n## Changing Permissions\n\n```bash\nchmod +x script.sh        # add execute permission for everyone\nchmod 644 notes.txt       # owner: rw-, group: r--, others: r--\nchmod 755 script.sh       # owner: rwx, group: r-x, others: r-x\n```\n\nThe numeric mode adds up: read=4, write=2, execute=1. So `7` = 4+2+1 = `rwx`, and `5` = 4+1 = `r-x`.\n\n## Changing Ownership\n\n```bash\nsudo chown minh:minh notes.txt   # set owner and group\n```\n\n## About `sudo`\n\n`sudo` (\"superuser do\") temporarily runs a single command with administrator privileges. Use it deliberately - it's the difference between \"this command might mess something up\" and \"this command WILL affect the whole system if I get it wrong.\"\n\n```bash\nsudo apt update   # run just this one command as admin\n```\n\nAvoid running an entire shell as `root` unless you have a specific reason - it's easy to make a permanent mistake."
+    },
+    {
+      "title": "Installing and Managing Software with Package Managers",
+      "slug": "package-managers-for-beginners",
+      "excerpt": "Forget hunting for .exe installers - Linux software comes from repositories managed by a package manager. Here's how that works.",
+      "publishedAt": "2026-01-24",
+      "order": 5,
+      "body": "## What Is a Package Manager?\n\nInstead of downloading installers from random websites, Linux distros ship with a **package manager** that installs, updates, and removes software from trusted repositories - similar in spirit to an app store, but for the command line.\n\n## Debian/Ubuntu: `apt`\n\n```bash\nsudo apt update             # refresh the list of available packages\nsudo apt upgrade            # upgrade all installed packages\nsudo apt install git        # install a package\nsudo apt remove git         # remove a package\napt search text-editor      # search for a package\n```\n\n## Fedora/RHEL: `dnf`\n\n```bash\nsudo dnf check-update\nsudo dnf install git\nsudo dnf remove git\n```\n\n## Arch: `pacman`\n\n```bash\nsudo pacman -Syu            # sync and upgrade everything\nsudo pacman -S git          # install a package\nsudo pacman -R git          # remove a package\n```\n\n## Universal Formats\n\nYou'll also see cross-distro package formats:\n\n- **Snap** - `sudo snap install code`\n- **Flatpak** - `flatpak install flathub org.videolan.VLC`\n\nThese bundle their own dependencies, so they work the same way regardless of distro, at the cost of a larger download.\n\n## Rule of Thumb\n\nPrefer your distro's native package manager (`apt`/`dnf`/`pacman`) first - it integrates best with the system. Reach for Snap/Flatpak when software isn't available natively."
+    },
+    {
+      "title": "Basic Linux Networking Commands",
+      "slug": "basic-networking-commands",
+      "excerpt": "Check your IP, test connectivity, and diagnose network issues with a handful of commands every Linux user should know.",
+      "publishedAt": "2026-01-28",
+      "order": 6,
+      "body": "## Checking Your Network Configuration\n\n```bash\nip addr show      # modern way to view network interfaces and IP addresses\nip route          # view the routing table / default gateway\nhostname -I       # quick way to print your machine's IP address(es)\n```\n\n## Testing Connectivity\n\n```bash\nping google.com          # check if a host is reachable (Ctrl+C to stop)\ncurl -I https://qminh.com  # fetch just the HTTP headers from a URL\nwget https://example.com/file.zip  # download a file\n```\n\n## DNS Lookups\n\n```bash\nnslookup qminh.com\ndig qminh.com\n```\n\nBoth resolve a domain name to its IP address; `dig` gives more detail and is preferred by most sysadmins today.\n\n## Checking Open Ports & Connections\n\n```bash\nss -tulpn      # list listening ports and the processes using them\n```\n\n## SSH: Connecting to Remote Machines\n\n```bash\nssh user@192.168.1.100        # connect to a remote server\nscp file.txt user@host:/path  # copy a file to a remote server\n```\n\nThese few commands cover diagnosing \"why can't I reach this server\" for the vast majority of everyday situations."
+    },
+    {
+      "title": "Creating Your First Shell Script",
+      "slug": "your-first-shell-script",
+      "excerpt": "Turn a sequence of terminal commands into a reusable script - the first real step from 'using Linux' to 'automating Linux'.",
+      "publishedAt": "2026-02-02",
+      "order": 7,
+      "body": "## Why Scripts?\n\nAny sequence of commands you type more than twice is a candidate for a script. Shell scripts automate repetitive terminal work.\n\n## Your First Script\n\nCreate a file called `greet.sh`:\n\n```bash\n#!/bin/bash\n# A minimal greeting script\n\necho \"Hello, $(whoami)!\"\necho \"Today is $(date)\"\necho \"You're in: $(pwd)\"\n```\n\nThe `#!/bin/bash` on the first line is called a **shebang** - it tells the system which interpreter to run the script with.\n\n## Making It Executable\n\n```bash\nchmod +x greet.sh   # grant execute permission\n./greet.sh          # run it (the ./ is required unless it's on your PATH)\n```\n\n## Variables and Conditionals\n\n```bash\n#!/bin/bash\n\nname=\"Minh\"\n\nif [ \"$name\" = \"Minh\" ]; then\n  echo \"Welcome back, $name.\"\nelse\n  echo \"Who are you, $name?\"\nfi\n```\n\n## A Practical Example: Backup Script\n\n```bash\n#!/bin/bash\n# Back up a directory with a timestamped filename\n\nSOURCE=\"$HOME/projects\"\nDEST=\"$HOME/backups/projects-$(date +%Y%m%d-%H%M%S).tar.gz\"\n\nmkdir -p \"$HOME/backups\"\ntar -czf \"$DEST\" \"$SOURCE\"\necho \"Backed up $SOURCE to $DEST\"\n```\n\nThat's a real, useful script in eight lines. From here, the natural next steps are loops, functions, and scheduling scripts with `cron` - but even this much already saves you from retyping the same commands every day."
+    }
+  ]
+}

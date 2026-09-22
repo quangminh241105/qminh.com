@@ -1,6 +1,11 @@
 import ProjectCard from "@/components/ProjectCard";
+import QminhFlowCard from "@/components/QminhFlowCard";
 import SectionTitle from "@/components/SectionTitle";
 import { getPortfolioContent } from "@/lib/portfolio-db";
+
+export const metadata = {
+  title: "Projects | Quang Minh",
+};
 
 export default async function ProjectsPage() {
   const portfolio = await getPortfolioContent();
@@ -9,12 +14,12 @@ export default async function ProjectsPage() {
     <main className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <SectionTitle
         eyebrow="Projects"
-        title="Selected work"
-        description="These projects highlight my approach to architecture, UI, and maintainable code."
+        title="Selected Engineering Work"
+        description="Full-stack web applications, tools, and systems architectures with repository and live demo links."
       />
 
-      {/* Project cards are mapped from one store to keep content edits centralized. */}
-      <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <section className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <QminhFlowCard />
         {portfolio.projects.map((project) => (
           <ProjectCard key={project.title} project={project} />
         ))}
