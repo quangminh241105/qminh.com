@@ -1,6 +1,12 @@
 import SectionTitle from "@/components/SectionTitle";
 import BlogGroupCard from "@/components/BlogGroupCard";
 import { getPortfolioContent } from "@/lib/portfolio-db";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Blog | Quang Minh",
+  description: "Notes and practical engineering thoughts from Quang Minh.",
+};
 
 export default async function BlogPage() {
   const portfolio = await getPortfolioContent();

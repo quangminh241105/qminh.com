@@ -9,6 +9,7 @@ import {
   ArticleGroup,
   ResumeItem,
   type NavItem,
+  type ResumeFile,
   type SocialLink,
 } from "@/lib/portfolio";
 import type { Db } from "mongodb";
@@ -35,6 +36,7 @@ export type PortfolioContent = {
   articles: Article[];
   articleGroups: ArticleGroup[];
   resume: ResumeItem[];
+  resumeFile?: ResumeFile;
   source: "db" | "fallback";
 };
 
@@ -221,6 +223,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
     }
 
     const plainSkills = dbSkills.map((s: any) => ({
+      id: s._id?.toString?.() ?? s.name,
       name: s.name,
       category: s.category,
       level: s.level,
@@ -229,18 +232,25 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
 
     const plainProjects = dbProjects.map((p: any) => {
       const technologies = Array.isArray(p.technologies) ? p.technologies : [];
+      const pictures = Array.isArray(p.pictures) ? p.pictures : [];
+      const videos = Array.isArray(p.videos) ? p.videos : [];
+      const customVariables =
+        typeof p.customVariables === "object" && p.customVariables !== null ? p.customVariables : {};
       return {
+        id: p._id?.toString?.() ?? p.title,
         title: p.title,
         summary: p.summary,
         technologies,
         repoUrl: p.repoUrl || "",
         demoUrl: p.demoUrl || "",
         featured: Boolean(p.featured),
-        pictures: Array.isArray(p.pictures) ? p.pictures : [],
-        videos: Array.isArray(p.videos) ? p.videos : [],
-        customVariables:
-          typeof p.customVariables === "object" && p.customVariables !== null ? p.customVariables : {},
+        pictures,
+        videos,
+        customVariables,
         content: p.content || "",
+        images: pictures,
+        videoUrl: videos[0],
+        customVars: customVariables,
         order: p.order,
         primaryTechnology: technologies[0] ?? "General",
       };
@@ -254,6 +264,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
     }));
 
     const plainArticles = dbArticles.map((a: any) => ({
+      id: a._id?.toString?.() ?? a.slug,
       title: a.title,
       excerpt: a.excerpt,
       slug: a.slug,
@@ -262,10 +273,14 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       content: a.content || "",
       pictures: Array.isArray(a.pictures) ? a.pictures : [],
       videos: Array.isArray(a.videos) ? a.videos : [],
+      body: a.content || "",
+      coverImage: Array.isArray(a.pictures) ? a.pictures[0] : undefined,
+      videoUrl: Array.isArray(a.videos) ? a.videos[0] : undefined,
       order: a.order,
     }));
 
     const plainResume = dbResume.map((r: any) => ({
+      id: r._id?.toString?.() ?? r.title,
       period: r.period,
       title: r.title,
       details: r.details,
@@ -327,8 +342,11 @@ export async function updateProfile(data: {
   profession: string;
   tagline: string;
   location: string;
+  navItems?: NavItem[];
+  socialLinks?: SocialLink[];
   quickSummary: string[];
   about: { intro: string; background: string; interests: string[] };
+  resumeFile?: ResumeFile;
 }) {
   const db = await getDb();
   await db.collection("profile").updateOne(
@@ -340,6 +358,15 @@ export async function updateProfile(data: {
       },
     },
     { upsert: true }
+  );
+}
+
+export async function updateResumeFile(file: ResumeFile): Promise<void> {
+  const db = await getDb();
+  await db.collection("profile").updateOne(
+    {},
+    { $set: { resumeFile: { ...file, updatedAt: new Date().toISOString() }, updatedAt: new Date() } },
+    { upsert: true },
   );
 }
 

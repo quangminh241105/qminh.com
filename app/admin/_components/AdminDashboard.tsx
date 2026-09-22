@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { logoutAction } from "../actions";
+import { logoutAdminAction } from "../actions";
 import { UiButton } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import { OverviewTab } from "./OverviewTab";
@@ -32,7 +32,7 @@ export function AdminDashboard({ portfolio }: { portfolio: PortfolioContent }) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
   async function handleLogout() {
-    await logoutAction();
+    await logoutAdminAction();
     router.push("/admin/login");
     router.refresh();
   }

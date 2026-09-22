@@ -8,16 +8,33 @@ export type SocialLink = {
   href: string;
 };
 
+export type ResumeFile = {
+  url: string;
+  name: string;
+  size: number;
+  format: "doc" | "docx" | "pdf";
+  updatedAt: string;
+};
+
 export class Skill {
+  public readonly id: string;
+
   constructor(
     public readonly name: string,
     public readonly category: string,
     public readonly level: number,
     public readonly order?: number,
-  ) {}
+  ) {
+    this.id = name;
+  }
 }
 
 export class Project {
+  public readonly id: string;
+  public readonly images: string[];
+  public readonly videoUrl: string | undefined;
+  public readonly customVars: Record<string, string>;
+
   constructor(
     public readonly title: string,
     public readonly summary: string,
@@ -30,11 +47,17 @@ export class Project {
     public readonly customVariables: Record<string, string> = {},
     public readonly content: string = "",
     public readonly order?: number,
-  ) {}
+  ) {
+    this.id = title;
+    this.images = pictures;
+    this.videoUrl = videos[0];
+    this.customVars = customVariables;
+  }
 
   get primaryTechnology(): string {
     return this.technologies[0] ?? "General";
   }
+
 }
 
 export class Testimonial {
@@ -47,6 +70,11 @@ export class Testimonial {
 }
 
 export class Article {
+  public readonly id: string;
+  public readonly body: string;
+  public readonly coverImage: string | undefined;
+  public readonly videoUrl: string | undefined;
+
   constructor(
     public readonly title: string,
     public readonly excerpt: string,
@@ -57,24 +85,40 @@ export class Article {
     public readonly pictures: string[] = [],
     public readonly videos: string[] = [],
     public readonly order?: number,
-  ) {}
+  ) {
+    this.id = slug;
+    this.body = content;
+    this.coverImage = pictures[0];
+    this.videoUrl = videos[0];
+  }
 }
 
 export class ArticleGroup {
+  public readonly id: string;
+  public readonly coverImage: string | undefined;
+  public readonly articleCount: number = 0;
+
   constructor(
     public readonly name: string,
     public readonly slug: string,
     public readonly description: string,
-  ) {}
+  ) {
+    this.id = slug;
+    this.coverImage = undefined;
+  }
 }
 
 export class ResumeItem {
+  public readonly id: string;
+
   constructor(
     public readonly period: string,
     public readonly title: string,
     public readonly details: string,
     public readonly order?: number,
-  ) {}
+  ) {
+    this.id = title;
+  }
 }
 
 export class PortfolioStore {
@@ -82,6 +126,7 @@ export class PortfolioStore {
   readonly profession = "IT Student";
   readonly tagline = "Building reliable web apps with clean architecture and practical UX.";
   readonly location = "Ho Chi Minh City, Vietnam";
+  readonly resumeFile: ResumeFile | undefined = undefined;
   readonly quickSummary = [
     "Focused on scalable frontend architecture",
     "Hands-on with Next.js, TypeScript, and APIs",
