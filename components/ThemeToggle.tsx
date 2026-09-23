@@ -18,7 +18,7 @@ export default function ThemeToggle() {
   function toggleTheme() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    setIconRotation((rotation) => rotation + 180);
+    setIconRotation((rotation) => rotation + 360);
     document.documentElement.setAttribute("data-theme", next);
     try {
       localStorage.setItem("theme", next);
