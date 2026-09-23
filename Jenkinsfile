@@ -246,9 +246,8 @@ REMOTE_SCRIPT
                         echo "Waiting for $CANDIDATE_CONTAINER on localhost:$CANDIDATE_PORT..."
 
                         for i in $(seq 1 30); do
-                            if curl -sS -f -L "http://127.0.0.1:$CANDIDATE_PORT/api/health/db" > /dev/null 2>&1 \
-                                && curl -sS -f -L "http://127.0.0.1:$CANDIDATE_PORT/" > /dev/null 2>&1; then
-                                echo "Candidate $CANDIDATE_CONTAINER is healthy"
+                            if curl -sS -f -L --max-time 10 "http://127.0.0.1:$CANDIDATE_PORT/" > /dev/null 2>&1; then
+                                echo "Candidate $CANDIDATE_CONTAINER is serving the website"
                                 exit 0
                             fi
                             echo "Candidate health attempt $i/30 failed; waiting 2s..."
@@ -323,8 +322,7 @@ REMOTE_SCRIPT
                             CONTAINER="$2"
 
                             for i in $(seq 1 30); do
-                                if curl -sS -f -L "http://127.0.0.1:$PORT/api/health/db" > /dev/null 2>&1 \
-                                    && curl -sS -f -L "http://127.0.0.1:$PORT/" > /dev/null 2>&1; then
+                                if curl -sS -f -L --max-time 10 "http://127.0.0.1:$PORT/" > /dev/null 2>&1; then
                                     return 0
                                 fi
                                 echo "Active health attempt $i/30 failed; waiting 2s..."

@@ -126,6 +126,6 @@ npm run build
 
 ## Deploy
 
-Deployment is handled by the Jenkins pipeline (`Jenkinsfile`). On push, it rsyncs the source, injects the `qminh-env` credential into `.env`, builds a versioned Docker image, starts it on an alternate blue/green port, and verifies both the homepage and MongoDB health endpoint. Only after the candidate is healthy does it switch port `3000` to the new app container. If the build or health checks fail, the current app remains in place. The previous app container and superseded application image are removed only after a successful switch; MongoDB containers are not recreated by the deployment.
+Deployment is handled by the Jenkins pipeline (`Jenkinsfile`). On push, it rsyncs the source, injects the `qminh-env` credential into `.env`, builds a versioned Docker image, starts it on an alternate blue/green port, and verifies that the homepage responds successfully. Only after the candidate is serving does it switch port `3000` to the new app container. If the build or HTTP health check fails, the current app remains in place. The `/api/health/db` endpoint remains available for MongoDB diagnostics, but MongoDB is optional for deployment because the site serves static fallback content when the database is unavailable. The previous app container and superseded application image are removed only after a successful switch; MongoDB containers are not recreated by the deployment.
 
 Uploaded media persists in a host directory outside the deploy path (`UPLOADS_HOST_PATH`, bind-mounted into the app container), so it survives redeploys.
