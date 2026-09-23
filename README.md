@@ -29,10 +29,10 @@ copy .env.example .env
 3. (Optional) Start a local MongoDB:
 
 ```bash
-docker compose up mongo -d
+docker compose up mongodb -d
 ```
 
-If you're running `npm run dev` directly on the host (not in Docker), add a personal `.env.local` with `MONGODB_URI` pointing at `localhost:27017` instead of `mongo:27017` - see the comment in `.env.example`.
+If you're running `npm run dev` directly on the host (not in Docker), add a personal `.env.local` with `MONGODB_URI` pointing at `localhost:27017` instead of `mongodb:27017` - see the comment in `.env.example`.
 
 4. Start the development server:
 
@@ -126,6 +126,6 @@ npm run build
 
 ## Deploy
 
-Deployment is handled by the existing Jenkins pipeline (`Jenkinsfile`): on push, it rsyncs the repo to the host server, injects secrets from the `qminh-env` Jenkins credential into `.env`, then runs `docker compose up -d --build`, which builds and (re)starts both the `app` and `mongo` containers together (`docker-compose.yml`).
+Deployment is handled by the Jenkins pipeline (`Jenkinsfile`). On push, it rsyncs the source, injects the `qminh-env` credential into `.env`, builds a versioned Docker image, starts it on an alternate blue/green port, and verifies both the homepage and MongoDB health endpoint. Only after the candidate is healthy does it switch port `3000` to the new app container. If the build or health checks fail, the current app remains in place. The previous app container and superseded application image are removed only after a successful switch; MongoDB containers are not recreated by the deployment.
 
 Uploaded media persists in a host directory outside the deploy path (`UPLOADS_HOST_PATH`, bind-mounted into the app container), so it survives redeploys.

@@ -28,6 +28,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   allowedDevOrigins: ["qminh.com", "localhost:3000"],
   serverExternalPackages: ["mongodb"],
   images: {

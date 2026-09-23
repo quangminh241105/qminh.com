@@ -24,7 +24,7 @@ COPY --from=builder /app/.next/static ./.next/static
 
 # Not traced into the standalone output (nothing in the app imports them),
 # but needed for the Jenkins "Seed Blog Content" stage to run inside this
-# container: docker compose exec -T app node scripts/seed-articles.mjs
+# container: docker exec <active-container> node scripts/seed-articles.mjs
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/data ./data
 

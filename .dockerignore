@@ -9,4 +9,3 @@ Jenkinsfile
 .gitignore
 docker-compose.yml
 public/uploads
-data
