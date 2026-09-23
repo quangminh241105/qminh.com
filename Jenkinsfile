@@ -93,7 +93,7 @@ pipeline {
         stage('Build Candidate') {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
-                    sh '''
+                    sh(script: '''
                         ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} \
                             "bash -s -- '${DEPLOY_PATH}' '${APP_NAME}' '${APP_PORT}' '${BUILD_NUMBER}' '${UPLOADS_HOST_PATH}'" <<'REMOTE_SCRIPT'
                         set -eu
@@ -221,7 +221,7 @@ pipeline {
                         trap - EXIT
                         echo 'Candidate is running; the current app was not stopped.'
                         REMOTE_SCRIPT
-                    '''
+                    '''.stripIndent())
                 }
             }
         }
@@ -229,7 +229,7 @@ pipeline {
         stage('Health Check Candidate') {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
-                    sh '''
+                    sh(script: '''
                         ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} \
                             "bash -s -- '${DEPLOY_PATH}'" <<'REMOTE_SCRIPT'
                         set -eu
@@ -262,7 +262,7 @@ pipeline {
                         rm -f "$CANDIDATE_STATE"
                         exit 1
                         REMOTE_SCRIPT
-                    '''
+                    '''.stripIndent())
                 }
             }
         }
@@ -270,7 +270,7 @@ pipeline {
         stage('Switch Traffic') {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
-                    sh '''
+                    sh(script: '''
                         ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} \
                             "bash -s -- '${DEPLOY_PATH}' '${APP_NAME}' '${APP_PORT}' '${BUILD_NUMBER}' '${UPLOADS_HOST_PATH}'" <<'REMOTE_SCRIPT'
                         set -eu
@@ -375,7 +375,7 @@ pipeline {
 
                         echo "Blue-green deployment complete: $NEW_CONTAINER is serving on port $APP_PORT"
                         REMOTE_SCRIPT
-                    '''
+                    '''.stripIndent())
                 }
             }
         }
@@ -383,7 +383,7 @@ pipeline {
         stage('Seed Blog Content') {
             steps {
                 sshagent(['ubuntu-vm-jenkins']) {
-                    sh '''
+                    sh(script: '''
                         ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} \
                             "bash -s -- '${DEPLOY_PATH}'" <<'REMOTE_SCRIPT'
                         set -eu
@@ -395,7 +395,7 @@ pipeline {
                         echo 'Injecting data/seed/*.json into the active app container...'
                         docker exec "$ACTIVE_CONTAINER" node scripts/seed-articles.mjs
                         REMOTE_SCRIPT
-                    '''
+                    '''.stripIndent())
                 }
             }
         }
@@ -414,7 +414,7 @@ pipeline {
             // If Jenkins loses the connection after a candidate was started, remove only
             // that candidate. The active app and all database containers remain untouched.
             sshagent(['ubuntu-vm-jenkins']) {
-                sh '''
+                sh(script: '''
                     ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} \
                         "bash -s -- '${DEPLOY_PATH}'" <<'REMOTE_SCRIPT' || true
                     set +e
@@ -427,7 +427,7 @@ pipeline {
                         rm -f "$CANDIDATE_STATE"
                     fi
                     REMOTE_SCRIPT
-                '''
+                '''.stripIndent())
             }
         }
 
