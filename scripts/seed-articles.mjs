@@ -1,7 +1,7 @@
-// Standalone seeder for blog groups + articles, run inside the running `app`
-// container (see Jenkinsfile's "Seed Blog Content" stage). Uses the same
-// MONGODB_URI/MONGODB_DB env vars as lib/mongodb.ts, but talks to Mongo
-// directly since this runs outside the Next.js runtime.
+// Standalone seeder for blog groups + articles. Run it manually inside the
+// running `app` container after verifying the MongoDB credentials. It uses
+// the same MONGODB_URI/MONGODB_DB env vars as lib/mongodb.ts, but talks to
+// Mongo directly since this runs outside the Next.js runtime.
 //
 // Usage: node scripts/seed-articles.mjs [path/to/seed.json ...]
 // Defaults to every *.json file under data/seed/.

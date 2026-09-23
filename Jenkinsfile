@@ -378,25 +378,6 @@ REMOTE_SCRIPT
             }
         }
 
-        stage('Seed Blog Content') {
-            steps {
-                sshagent(['ubuntu-vm-jenkins']) {
-                    sh(script: '''
-                        ssh ${SSH_OPTS} ${TARGET_USER}@${TARGET_SERVER} \
-                            "bash -s -- '${DEPLOY_PATH}'" <<'REMOTE_SCRIPT'
-                        set -eu
-
-                        DEPLOY_PATH="$1"
-                        ACTIVE_STATE="$DEPLOY_PATH/.qminh-active"
-                        . "$ACTIVE_STATE"
-
-                        echo 'Injecting data/seed/*.json into the active app container...'
-                        docker exec "$ACTIVE_CONTAINER" node scripts/seed-articles.mjs
-REMOTE_SCRIPT
-                    '''.stripIndent())
-                }
-            }
-        }
     }
 
     post {
