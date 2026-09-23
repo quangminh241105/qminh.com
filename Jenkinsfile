@@ -220,7 +220,7 @@ pipeline {
                         CANDIDATE_READY=1
                         trap - EXIT
                         echo 'Candidate is running; the current app was not stopped.'
-                        REMOTE_SCRIPT
+REMOTE_SCRIPT
                     '''.stripIndent())
                 }
             }
@@ -261,7 +261,7 @@ pipeline {
                         docker image rm "$IMAGE" > /dev/null 2>&1 || true
                         rm -f "$CANDIDATE_STATE"
                         exit 1
-                        REMOTE_SCRIPT
+REMOTE_SCRIPT
                     '''.stripIndent())
                 }
             }
@@ -374,7 +374,7 @@ pipeline {
                         done
 
                         echo "Blue-green deployment complete: $NEW_CONTAINER is serving on port $APP_PORT"
-                        REMOTE_SCRIPT
+REMOTE_SCRIPT
                     '''.stripIndent())
                 }
             }
@@ -394,7 +394,7 @@ pipeline {
 
                         echo 'Injecting data/seed/*.json into the active app container...'
                         docker exec "$ACTIVE_CONTAINER" node scripts/seed-articles.mjs
-                        REMOTE_SCRIPT
+REMOTE_SCRIPT
                     '''.stripIndent())
                 }
             }
@@ -426,7 +426,7 @@ pipeline {
                         docker image rm "$IMAGE" > /dev/null 2>&1 || true
                         rm -f "$CANDIDATE_STATE"
                     fi
-                    REMOTE_SCRIPT
+REMOTE_SCRIPT
                 '''.stripIndent())
             }
         }
