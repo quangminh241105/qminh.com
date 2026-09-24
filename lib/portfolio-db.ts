@@ -1,5 +1,5 @@
 import { cache } from "react";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import {
   portfolioStore,
   Skill,
@@ -19,6 +19,47 @@ type AboutSection = {
   background: string;
   interests: string[];
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeString(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function normalizeStringArray(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return [...fallback];
+  const normalized = value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  return normalized.length > 0 ? normalized : [...fallback];
+}
+
+function normalizeNavItems(value: unknown): NavItem[] {
+  if (!Array.isArray(value)) return [...portfolioStore.navItems];
+  const normalized = value.flatMap((item) => {
+    if (!isRecord(item) || typeof item.label !== "string" || typeof item.href !== "string") return [];
+    return [{ label: item.label, href: item.href }];
+  });
+  return normalized.length > 0 ? normalized : [...portfolioStore.navItems];
+}
+
+function normalizeSocialLinks(value: unknown): SocialLink[] {
+  if (!Array.isArray(value)) return [...portfolioStore.socialLinks];
+  const normalized = value.flatMap((item) => {
+    if (!isRecord(item) || typeof item.label !== "string" || typeof item.href !== "string") return [];
+    return [{ label: item.label, href: item.href }];
+  });
+  return normalized.length > 0 ? normalized : [...portfolioStore.socialLinks];
+}
+
+function normalizeAbout(value: unknown): AboutSection {
+  const about = isRecord(value) ? value : {};
+  return {
+    intro: normalizeString(about.intro, portfolioStore.about.intro),
+    background: normalizeString(about.background, portfolioStore.about.background),
+    interests: normalizeStringArray(about.interests, portfolioStore.about.interests),
+  };
+}
 
 export type PortfolioContent = {
   name: string;
@@ -76,7 +117,7 @@ function withUpdatedQuickSummary(quickSummary: string[]): string[] {
 }
 
 async function getDb(): Promise<Db> {
-  const client = await clientPromise;
+  const client = await getMongoClient();
   return client.db(process.env.MONGODB_DB || "portfolio");
 }
 
@@ -364,14 +405,10 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       profession: profileDoc.profession || portfolioStore.profession,
       tagline: profileDoc.tagline || portfolioStore.tagline,
       location: profileDoc.location || portfolioStore.location,
-      navItems: Array.isArray(profileDoc.navItems) ? profileDoc.navItems : [...portfolioStore.navItems],
-      socialLinks: withCanonicalSocialLinks(
-        Array.isArray(profileDoc.socialLinks) ? profileDoc.socialLinks : [...portfolioStore.socialLinks],
-      ),
-      quickSummary: withUpdatedQuickSummary(
-        Array.isArray(profileDoc.quickSummary) ? profileDoc.quickSummary : [...portfolioStore.quickSummary],
-      ),
-      about: profileDoc.about || { ...portfolioStore.about },
+      navItems: normalizeNavItems(profileDoc.navItems),
+      socialLinks: withCanonicalSocialLinks(normalizeSocialLinks(profileDoc.socialLinks)),
+      quickSummary: withUpdatedQuickSummary(normalizeStringArray(profileDoc.quickSummary, portfolioStore.quickSummary)),
+      about: normalizeAbout(profileDoc.about),
       skills: plainSkills,
       projects: plainProjects,
       featuredProjects: plainProjects.filter((p) => p.featured),
@@ -399,9 +436,9 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       tagline: portfolioStore.tagline,
       location: portfolioStore.location,
       navItems: [...portfolioStore.navItems],
-      socialLinks: [...portfolioStore.socialLinks],
+      socialLinks: withCanonicalSocialLinks([...portfolioStore.socialLinks]),
       quickSummary: [...portfolioStore.quickSummary],
-      about: { ...portfolioStore.about },
+      about: normalizeAbout(portfolioStore.about),
       skills: plainSkills,
       projects: plainProjects,
       featuredProjects: plainProjects.filter((p) => p.featured),

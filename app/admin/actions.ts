@@ -225,6 +225,14 @@ export async function deleteResumeItemServerAction(title: string) {
 
 function actionFailure(error: unknown, fallback: string): { ok: false; error: string } {
   console.error(fallback, error);
+  if (error instanceof Error && error.message === "Unauthorized") {
+    return { ok: false, error: "Admin session expired. Sign in again." };
+  }
+
+  if (error instanceof Error && /mongodb|mongo server|server selection|econnrefused|enotfound|mongod[b]?_uri/i.test(error.message)) {
+    return { ok: false, error: `Database unavailable. ${error.message}` };
+  }
+
   return {
     ok: false,
     error: error instanceof Error ? error.message : fallback,

@@ -464,6 +464,18 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         </div>
       )}
 
+      {!dbHealth.ok && (
+        <div className="mt-4 border-2 border-amber-600 bg-amber-50 p-4 font-mono text-xs text-amber-950 shadow-[3px_3px_0px_#000000] dark:bg-amber-950/40 dark:text-amber-100">
+          <p className="font-black uppercase tracking-wider">Database unavailable — changes cannot be saved</p>
+          <p className="mt-2 break-words leading-relaxed">
+            The dashboard is showing static fallback content. Restore the MongoDB service or check the production
+            <code className="mx-1 border border-amber-700/50 bg-amber-100 px-1 dark:bg-amber-900/50">MONGODB_URI</code>
+            before using CRUD actions.
+          </p>
+          <p className="mt-2 break-words border-t border-amber-700/30 pt-2 text-[11px] opacity-80">{dbHealth.message}</p>
+        </div>
+      )}
+
       {/* Tabs Navigation */}
       <div className="mt-6 flex flex-wrap gap-2 border-b-2 border-black pb-2 dark:border-zinc-700">
         {[

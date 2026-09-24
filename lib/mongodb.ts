@@ -1,6 +1,5 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 
-const uri = process.env.MONGODB_URI;
 const options = {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -11,26 +10,37 @@ const options = {
   serverSelectionTimeoutMS: 5000,
 };
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
+let clientPromise: Promise<MongoClient> | undefined;
 
 declare global {
-  // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-if (!uri) {
-  // If no URI is provided, create a rejected promise so portfolio-db can gracefully catch and fallback
-  clientPromise = Promise.reject(new Error("MONGODB_URI environment variable is not defined"));
-} else if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+export async function getMongoClient(): Promise<MongoClient> {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("MONGODB_URI environment variable is not defined");
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
 
-export default clientPromise;
+  if (process.env.NODE_ENV === "development") {
+    if (!global._mongoClientPromise) {
+      global._mongoClientPromise = new MongoClient(uri, options).connect();
+    }
+    return global._mongoClientPromise;
+  }
+
+  if (!clientPromise) {
+    const connectionAttempt = new MongoClient(uri, options).connect();
+    clientPromise = connectionAttempt;
+
+    // Do not leave a rejected connection promise unhandled when MongoDB is
+    // unavailable during startup. The next request can retry the connection.
+    void connectionAttempt.catch(() => {
+      if (clientPromise === connectionAttempt) {
+        clientPromise = undefined;
+      }
+    });
+  }
+
+  return clientPromise;
+}
