@@ -39,7 +39,15 @@ type Props = {
 type Tab = "overview" | "profile" | "projects" | "blog" | "groups" | "resume" | "skills" | "media";
 
 function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
+  const message = error instanceof Error ? error.message : "";
+  if (/server action.*not found|failed to find server action/i.test(message)) {
+    if (typeof window !== "undefined") {
+      window.setTimeout(() => window.location.reload(), 250);
+    }
+    return "A newer dashboard version is active. Reloading...";
+  }
+
+  return message || fallback;
 }
 
 export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {

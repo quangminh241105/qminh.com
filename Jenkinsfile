@@ -172,7 +172,9 @@ pipeline {
                         fi
 
                         echo "Building $IMAGE without stopping the current app or starting MongoDB..."
-                        docker build --pull -t "$IMAGE" "$DEPLOY_PATH"
+                        docker build --pull \
+                            --build-arg "NEXT_DEPLOYMENT_ID=$BUILD_NUMBER" \
+                            -t "$IMAGE" "$DEPLOY_PATH"
 
                         CANDIDATE_PORT=""
                         for PORT in 31001 31002; do

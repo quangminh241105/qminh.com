@@ -29,6 +29,10 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Jenkins supplies the build number so clients can detect stale pages
+  // after a blue-green deployment and perform a full reload before invoking
+  // Server Actions from an older build.
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID,
   allowedDevOrigins: ["qminh.com", "localhost:3000"],
   serverExternalPackages: ["mongodb"],
   images: {
