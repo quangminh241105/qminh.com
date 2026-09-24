@@ -8,6 +8,7 @@ import Link from "next/link";
 import { type Project } from "@/lib/portfolio";
 import { CheckIcon, PlusIcon, ArrowRightIcon, TerminalIcon } from "@/components/icons";
 import RetroIconLayer from "@/components/RetroIconLayer";
+import TypewriterText from "@/components/TypewriterText";
 
 function getRandomProjects(projects: Project[]) {
   const shuffled = [...projects];
@@ -33,11 +34,17 @@ export default async function Home() {
               <span>{portfolio.profession}</span>
             </div>
 
-            <h1 className="mt-6 text-4xl font-black uppercase tracking-tight text-black sm:text-6xl dark:text-white">
-              Hi, I am <span className="underline decoration-blue-600 decoration-wavy decoration-4 dark:decoration-blue-400">{portfolio.name}</span>.
+            <h1 className="mt-6 text-[clamp(1.25rem,6vw,3.75rem)] font-black uppercase tracking-tight text-black dark:text-white">
+              <span className="inline-flex items-baseline whitespace-nowrap">
+                <span>Hi, I am&nbsp;</span>
+                <span className="inline-block whitespace-nowrap underline decoration-blue-600 decoration-wavy decoration-4 dark:decoration-blue-400">
+                  <TypewriterText phrases={[portfolio.name, "a developer", "a builder", "a bug wiper"]} />
+                </span>
+                <span>.</span>
+              </span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-700 dark:text-zinc-300 font-sans">
+            <p className="mt-6 max-w-full overflow-x-auto whitespace-nowrap text-lg leading-relaxed text-zinc-700 dark:text-zinc-300 font-sans">
               {portfolio.tagline}
             </p>
 
@@ -73,7 +80,13 @@ export default async function Home() {
                   <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border border-black bg-green-500 text-black">
                     <CheckIcon className="h-3 w-3 stroke-[3]" />
                   </span>
-                  <span>{item}</span>
+                  <TypewriterText
+                    phrases={[item]}
+                    initialDelay={1800 + idx * 350}
+                    typingSpeed={62}
+                    deletingSpeed={34}
+                    pauseDuration={2600}
+                  />
                 </li>
               ))}
             </ul>
@@ -88,7 +101,7 @@ export default async function Home() {
           title="Tech Stack & Tools"
           description="Core technologies and frameworks I use to build robust, scalable applications."
         />
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-8">
           <SkillsChart skills={portfolio.skills} />
         </div>
       </section>

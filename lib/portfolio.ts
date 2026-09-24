@@ -130,7 +130,7 @@ export class PortfolioStore {
   readonly quickSummary = [
     "Focused on scalable frontend architecture",
     "Hands-on with Next.js, TypeScript, and APIs",
-    "Interested in internships and project collaborations",
+    "Interested in internships and collaborations",
   ];
 
   readonly navItems: NavItem[] = [

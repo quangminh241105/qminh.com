@@ -7,6 +7,7 @@ type Theme = "light" | "dark";
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("light");
+  const [iconRotation, setIconRotation] = useState(0);
 
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
@@ -16,6 +17,7 @@ export default function ThemeToggle() {
 
   function toggleTheme() {
     const next: Theme = theme === "dark" ? "light" : "dark";
+    setIconRotation((rotation) => rotation + 360);
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
     try {
@@ -33,7 +35,10 @@ export default function ThemeToggle() {
         aria-label="Toggle color theme"
         className="flex h-9 w-9 items-center justify-center border-2 border-black bg-white text-blue-600 shadow-[2px_2px_0px_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 dark:border-blue-400 dark:bg-zinc-900 dark:text-blue-400 dark:shadow-[2px_2px_0px_#000000] dark:hover:shadow-[3px_3px_0px_#000000]"
       >
-        <span className="flex">
+        <span
+          className="flex transition-transform duration-300 ease-out"
+          style={{ transform: `rotate(${iconRotation}deg)` }}
+        >
           {theme === "dark" ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
         </span>
       </button>

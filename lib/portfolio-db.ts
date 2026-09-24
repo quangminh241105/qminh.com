@@ -67,6 +67,14 @@ function withCanonicalSocialLinks(socialLinks: SocialLink[]): SocialLink[] {
   return normalizedLinks;
 }
 
+function withUpdatedQuickSummary(quickSummary: string[]): string[] {
+  return quickSummary.map((item) =>
+    item === "Interested in internships and project collaborations"
+      ? "Interested in internships and collaborations"
+      : item,
+  );
+}
+
 async function getDb(): Promise<Db> {
   const client = await clientPromise;
   return client.db(process.env.MONGODB_DB || "portfolio");
@@ -313,7 +321,9 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       socialLinks: withCanonicalSocialLinks(
         Array.isArray(profileDoc.socialLinks) ? profileDoc.socialLinks : [...portfolioStore.socialLinks],
       ),
-      quickSummary: Array.isArray(profileDoc.quickSummary) ? profileDoc.quickSummary : [...portfolioStore.quickSummary],
+      quickSummary: withUpdatedQuickSummary(
+        Array.isArray(profileDoc.quickSummary) ? profileDoc.quickSummary : [...portfolioStore.quickSummary],
+      ),
       about: profileDoc.about || { ...portfolioStore.about },
       skills: plainSkills,
       projects: plainProjects,
