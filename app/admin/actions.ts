@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
@@ -33,11 +33,15 @@ export async function loginAdminAction(_prevState: unknown, formData: FormData) 
 
   const token = await signSession({ role: "admin", loggedInAt: Date.now() });
   const cookieStore = await cookies();
+  const requestHeaders = await headers();
+  const forwardedProtocol = requestHeaders.get("x-forwarded-proto")?.split(",")[0].trim().toLowerCase();
+  const requestOrigin = requestHeaders.get("origin") || requestHeaders.get("referer") || "";
+  const secureCookie = forwardedProtocol === "https" || requestOrigin.startsWith("https://");
 
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: secureCookie,
+    sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });

@@ -13,6 +13,11 @@ export function timingSafeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
+export function isValidAdminApiKey(value: string | null | undefined): boolean {
+  const candidate = value?.trim();
+  return Boolean(candidate && timingSafeEqual(candidate, getAdminApiKey().trim()));
+}
+
 function getSessionSecret(): string {
   return process.env.ADMIN_SESSION_SECRET || "default_local_dev_secret_replace_in_prod";
 }
@@ -82,34 +87,28 @@ export async function verifySession(
   }
 }
 
+export async function isValidAdminSessionToken(token: string | undefined | null): Promise<boolean> {
+  const session = await verifySession(token);
+  return session?.role === "admin";
+}
+
 export async function isAuthenticatedAdmin(): Promise<boolean> {
+  // Keep cookie and header checks isolated. A failure reading one request
+  // primitive must not prevent the other valid credential from being checked.
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-    if (token) {
-      const session = await verifySession(token);
-      if (session && session.role === "admin") {
-        return true;
-      }
-    }
-
-    const headerList = await headers();
-    const authHeader = headerList.get("authorization");
-    const xAdminKey = headerList.get("x-admin-key");
-    const expectedKey = getAdminApiKey();
-
-    if (authHeader?.startsWith("Bearer ")) {
-      const bearerToken = authHeader.slice(7).trim();
-      if (timingSafeEqual(bearerToken, expectedKey)) {
-        return true;
-      }
-    }
-
-    if (xAdminKey && timingSafeEqual(xAdminKey.trim(), expectedKey)) {
+    if (await isValidAdminSessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value)) {
       return true;
     }
+  } catch {
+    // Continue to the header credential path.
+  }
 
-    return false;
+  try {
+    const headerList = await headers();
+    const authHeader = headerList.get("authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+    return isValidAdminApiKey(bearerToken) || isValidAdminApiKey(headerList.get("x-admin-key"));
   } catch {
     return false;
   }
