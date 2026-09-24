@@ -37,7 +37,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       <section className="hero-gradient border-b border-slate-200 dark:border-slate-800">
         <div className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
           <Link
-            href={`/blog/${groupSlug}`}
+            href={`/blog?group=${encodeURIComponent(groupSlug)}`}
             className="text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900 dark:text-blue-300"
           >
             Back to blog

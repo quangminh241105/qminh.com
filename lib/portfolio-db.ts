@@ -184,6 +184,26 @@ async function ensureBootstrapped(db: Db) {
     }
 
     // Articles
+    // Article groups
+    if (!names.has("articleGroups")) {
+      await db.createCollection("articleGroups");
+    }
+    const articleGroupsCount = await db.collection("articleGroups").countDocuments();
+    if (articleGroupsCount === 0) {
+      await db.collection("articleGroups").insertMany(
+        portfolioStore.articleGroups.map((group, idx) => ({
+          name: group.name,
+          slug: group.slug,
+          description: group.description,
+          coverImage: group.coverImage,
+          order: idx,
+        })),
+      );
+    }
+    await db.collection("articleGroups").createIndex({ slug: 1 }, { unique: true });
+    await db.collection("articleGroups").createIndex({ order: 1 });
+
+    // Articles
     if (!names.has("articles")) {
       await db.createCollection("articles");
     }
@@ -234,11 +254,12 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
     const db = await getDb();
     await ensureBootstrapped(db);
 
-    const [profileDoc, dbSkills, dbProjects, dbTestimonials, dbArticles, dbResume] = await Promise.all([
+    const [profileDoc, dbSkills, dbProjects, dbTestimonials, dbArticleGroups, dbArticles, dbResume] = await Promise.all([
       db.collection("profile").findOne({}, { sort: { updatedAt: -1 } }),
       db.collection("skills").find().sort({ order: 1 }).toArray(),
       db.collection("projects").find().sort({ order: 1 }).toArray(),
       db.collection("testimonials").find().sort({ order: 1 }).toArray(),
+      db.collection("articleGroups").find().sort({ order: 1 }).toArray(),
       db.collection("articles").find().sort({ order: 1 }).toArray(),
       db.collection("resumeItems").find().sort({ order: 1 }).toArray(),
     ]);
@@ -304,6 +325,32 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       order: a.order,
     }));
 
+    const plainArticleGroups = dbArticleGroups.map((group: any) => ({
+      id: group.slug,
+      name: group.name,
+      slug: group.slug,
+      description: group.description || "",
+      coverImage: group.coverImage || undefined,
+      articleCount: plainArticles.filter((article) => article.groupSlug === group.slug).length,
+      order: group.order,
+    }));
+
+    const knownGroupSlugs = new Set(plainArticleGroups.map((group) => group.slug));
+    for (const article of plainArticles) {
+      if (!knownGroupSlugs.has(article.groupSlug)) {
+        plainArticleGroups.push({
+          id: article.groupSlug,
+          name: article.groupSlug,
+          slug: article.groupSlug,
+          description: "Articles without a configured group description.",
+          coverImage: undefined,
+          articleCount: plainArticles.filter((item) => item.groupSlug === article.groupSlug).length,
+          order: plainArticleGroups.length,
+        });
+        knownGroupSlugs.add(article.groupSlug);
+      }
+    }
+
     const plainResume = dbResume.map((r: any) => ({
       id: r._id?.toString?.() ?? r.title,
       period: r.period,
@@ -330,7 +377,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       featuredProjects: plainProjects.filter((p) => p.featured),
       testimonials: plainTestimonials,
       articles: plainArticles,
-      articleGroups: portfolioStore.articleGroups.map((group) => ({ ...group })),
+      articleGroups: plainArticleGroups,
       resume: plainResume,
       source: "db",
     };
@@ -341,6 +388,10 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
     const plainTestimonials = portfolioStore.testimonials.map((item) => ({ ...item }));
     const plainArticles = portfolioStore.articles.map((item) => ({ ...item }));
     const plainResume = portfolioStore.resume.map((item) => ({ ...item }));
+    const plainArticleGroups = portfolioStore.articleGroups.map((group) => ({
+      ...group,
+      articleCount: plainArticles.filter((article) => article.groupSlug === group.slug).length,
+    }));
 
     return {
       name: portfolioStore.name,
@@ -356,7 +407,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       featuredProjects: plainProjects.filter((p) => p.featured),
       testimonials: plainTestimonials,
       articles: plainArticles,
-      articleGroups: portfolioStore.articleGroups.map((group) => ({ ...group })),
+      articleGroups: plainArticleGroups,
       resume: plainResume,
       source: "fallback",
     };
@@ -376,6 +427,7 @@ export async function updateProfile(data: {
   resumeFile?: ResumeFile;
 }) {
   const db = await getDb();
+  await ensureBootstrapped(db);
   await db.collection("profile").updateOne(
     {},
     {
@@ -390,6 +442,7 @@ export async function updateProfile(data: {
 
 export async function updateResumeFile(file: ResumeFile): Promise<void> {
   const db = await getDb();
+  await ensureBootstrapped(db);
   await db.collection("profile").updateOne(
     {},
     { $set: { resumeFile: { ...file, updatedAt: new Date().toISOString() }, updatedAt: new Date() } },
@@ -412,33 +465,95 @@ export async function upsertProject(project: {
   originalTitle?: string;
 }) {
   const db = await getDb();
-  const searchKey = project.originalTitle || project.title;
+  await ensureBootstrapped(db);
+  const title = project.title.trim();
+  const summary = project.summary.trim();
+  if (!title || !summary) throw new Error("Project title and summary are required.");
+  const searchKey = project.originalTitle?.trim() || title;
   const count = await db.collection("projects").countDocuments();
 
-  await db.collection("projects").updateOne(
-    { title: searchKey },
-    {
-      $set: {
-        title: project.title,
-        summary: project.summary,
-        technologies: project.technologies,
-        repoUrl: project.repoUrl,
-        demoUrl: project.demoUrl,
-        featured: project.featured,
-        pictures: project.pictures || [],
-        videos: project.videos || [],
-        customVariables: project.customVariables || {},
-        content: project.content || "",
-        order: typeof project.order === "number" ? project.order : count,
+  try {
+    await db.collection("projects").updateOne(
+      { title: searchKey },
+      {
+        $set: {
+          title,
+          summary,
+          technologies: project.technologies,
+          repoUrl: project.repoUrl,
+          demoUrl: project.demoUrl,
+          featured: project.featured,
+          pictures: project.pictures || [],
+          videos: project.videos || [],
+          customVariables: project.customVariables || {},
+          content: project.content || "",
+          order: typeof project.order === "number" ? project.order : count,
+        },
       },
-    },
-    { upsert: true }
-  );
+      { upsert: true },
+    );
+  } catch (error: any) {
+    if (error?.code === 11000) throw new Error(`A project titled "${title}" already exists.`);
+    throw error;
+  }
 }
 
 export async function deleteProject(title: string) {
   const db = await getDb();
+  await ensureBootstrapped(db);
   await db.collection("projects").deleteOne({ title });
+}
+
+export async function upsertArticleGroup(group: {
+  name: string;
+  slug: string;
+  description: string;
+  coverImage?: string;
+  order?: number;
+  originalSlug?: string;
+}) {
+  const db = await getDb();
+  await ensureBootstrapped(db);
+  const name = group.name.trim();
+  const slug = group.slug.trim().toLowerCase();
+  const description = group.description.trim();
+  if (!name || !slug || !description) throw new Error("Group name, slug, and description are required.");
+
+  const searchKey = group.originalSlug?.trim().toLowerCase() || slug;
+  const count = await db.collection("articleGroups").countDocuments();
+
+  try {
+    await db.collection("articleGroups").updateOne(
+      { slug: searchKey },
+      {
+        $set: {
+          name,
+          slug,
+          description,
+          coverImage: group.coverImage || "",
+          order: typeof group.order === "number" ? group.order : count,
+        },
+      },
+      { upsert: true },
+    );
+
+    if (searchKey !== slug) {
+      await db.collection("articles").updateMany({ groupSlug: searchKey }, { $set: { groupSlug: slug } });
+    }
+  } catch (error: any) {
+    if (error?.code === 11000) throw new Error(`A blog group with the slug "${slug}" already exists.`);
+    throw error;
+  }
+}
+
+export async function deleteArticleGroup(slug: string) {
+  const db = await getDb();
+  await ensureBootstrapped(db);
+  const articleCount = await db.collection("articles").countDocuments({ groupSlug: slug });
+  if (articleCount > 0) {
+    throw new Error(`Move or delete the ${articleCount} article${articleCount === 1 ? "" : "s"} in this group first.`);
+  }
+  await db.collection("articleGroups").deleteOne({ slug });
 }
 
 export async function upsertArticle(article: {
@@ -454,30 +569,40 @@ export async function upsertArticle(article: {
   originalSlug?: string;
 }) {
   const db = await getDb();
-  const searchKey = article.originalSlug || article.slug;
+  await ensureBootstrapped(db);
+  const title = article.title.trim();
+  const slug = article.slug.trim().toLowerCase();
+  if (!title || !slug) throw new Error("Article title and slug are required.");
+  const searchKey = article.originalSlug?.trim().toLowerCase() || slug;
   const count = await db.collection("articles").countDocuments();
 
-  await db.collection("articles").updateOne(
-    { slug: searchKey },
-    {
-      $set: {
-        title: article.title,
-        excerpt: article.excerpt,
-        slug: article.slug,
-        groupSlug: article.groupSlug || "engineering-notes",
-        publishedAt: article.publishedAt,
-        content: article.content,
-        pictures: article.pictures || [],
-        videos: article.videos || [],
-        order: typeof article.order === "number" ? article.order : count,
+  try {
+    await db.collection("articles").updateOne(
+      { slug: searchKey },
+      {
+        $set: {
+          title,
+          excerpt: article.excerpt,
+          slug,
+          groupSlug: article.groupSlug || "engineering-notes",
+          publishedAt: article.publishedAt,
+          content: article.content,
+          pictures: article.pictures || [],
+          videos: article.videos || [],
+          order: typeof article.order === "number" ? article.order : count,
+        },
       },
-    },
-    { upsert: true }
-  );
+      { upsert: true },
+    );
+  } catch (error: any) {
+    if (error?.code === 11000) throw new Error(`An article with the slug "${slug}" already exists.`);
+    throw error;
+  }
 }
 
 export async function deleteArticle(slug: string) {
   const db = await getDb();
+  await ensureBootstrapped(db);
   await db.collection("articles").deleteOne({ slug });
 }
 
@@ -489,6 +614,7 @@ export async function upsertSkill(skill: {
   originalName?: string;
 }) {
   const db = await getDb();
+  await ensureBootstrapped(db);
   const searchKey = skill.originalName || skill.name;
   const count = await db.collection("skills").countDocuments();
 
@@ -508,6 +634,7 @@ export async function upsertSkill(skill: {
 
 export async function deleteSkill(name: string) {
   const db = await getDb();
+  await ensureBootstrapped(db);
   await db.collection("skills").deleteOne({ name });
 }
 
@@ -519,6 +646,7 @@ export async function upsertResumeItem(item: {
   originalTitle?: string;
 }) {
   const db = await getDb();
+  await ensureBootstrapped(db);
   const searchKey = item.originalTitle || item.title;
   const count = await db.collection("resumeItems").countDocuments();
 
@@ -538,5 +666,6 @@ export async function upsertResumeItem(item: {
 
 export async function deleteResumeItem(title: string) {
   const db = await getDb();
+  await ensureBootstrapped(db);
   await db.collection("resumeItems").deleteOne({ title });
 }

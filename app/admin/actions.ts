@@ -16,6 +16,8 @@ import {
   deleteProject,
   upsertArticle,
   deleteArticle,
+  upsertArticleGroup,
+  deleteArticleGroup,
   upsertSkill,
   deleteSkill,
   upsertResumeItem,
@@ -23,7 +25,7 @@ import {
 } from "@/lib/portfolio-db";
 import type { ResumeFile } from "@/lib/portfolio";
 
-export async function loginAdminAction(prevState: any, formData: FormData) {
+export async function loginAdminAction(_prevState: unknown, formData: FormData) {
   const password = formData.get("password") as string;
   if (!password || !verifyAdminPassword(password)) {
     return { error: "Invalid Admin Key / Password" };
@@ -64,12 +66,16 @@ export async function updateProfileServerAction(data: {
   quickSummary: string[];
   about: { intro: string; background: string; interests: string[] };
 }) {
-  await requireAuth();
-  await updateProfile(data);
-  revalidatePath("/");
-  revalidatePath("/about");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await updateProfile(data);
+    revalidatePath("/");
+    revalidatePath("/about");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to update profile.");
+  }
 }
 
 export async function saveProjectServerAction(data: {
@@ -86,21 +92,29 @@ export async function saveProjectServerAction(data: {
   order?: number;
   originalTitle?: string;
 }) {
-  await requireAuth();
-  await upsertProject(data);
-  revalidatePath("/");
-  revalidatePath("/projects");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await upsertProject(data);
+    revalidatePath("/");
+    revalidatePath("/projects");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to save project.");
+  }
 }
 
 export async function deleteProjectServerAction(title: string) {
-  await requireAuth();
-  await deleteProject(title);
-  revalidatePath("/");
-  revalidatePath("/projects");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await deleteProject(title);
+    revalidatePath("/");
+    revalidatePath("/projects");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to delete project.");
+  }
 }
 
 export async function saveArticleServerAction(data: {
@@ -115,22 +129,30 @@ export async function saveArticleServerAction(data: {
   order?: number;
   originalSlug?: string;
 }) {
-  await requireAuth();
-  await upsertArticle(data);
-  revalidatePath("/");
-  revalidatePath("/blog");
-  revalidatePath(`/blog/${data.slug}`);
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await upsertArticle(data);
+    revalidatePath("/");
+    revalidatePath("/blog");
+    revalidatePath(`/blog/${data.groupSlug || "engineering-notes"}/${data.slug}`);
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to save article.");
+  }
 }
 
 export async function deleteArticleServerAction(slug: string) {
-  await requireAuth();
-  await deleteArticle(slug);
-  revalidatePath("/");
-  revalidatePath("/blog");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await deleteArticle(slug);
+    revalidatePath("/");
+    revalidatePath("/blog");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to delete article.");
+  }
 }
 
 export async function saveSkillServerAction(data: {
@@ -140,21 +162,29 @@ export async function saveSkillServerAction(data: {
   order?: number;
   originalName?: string;
 }) {
-  await requireAuth();
-  await upsertSkill(data);
-  revalidatePath("/");
-  revalidatePath("/about");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await upsertSkill(data);
+    revalidatePath("/");
+    revalidatePath("/about");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to save skill.");
+  }
 }
 
 export async function deleteSkillServerAction(name: string) {
-  await requireAuth();
-  await deleteSkill(name);
-  revalidatePath("/");
-  revalidatePath("/about");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await deleteSkill(name);
+    revalidatePath("/");
+    revalidatePath("/about");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to delete skill.");
+  }
 }
 
 export async function saveResumeItemServerAction(data: {
@@ -164,21 +194,37 @@ export async function saveResumeItemServerAction(data: {
   order?: number;
   originalTitle?: string;
 }) {
-  await requireAuth();
-  await upsertResumeItem(data);
-  revalidatePath("/");
-  revalidatePath("/resume");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await upsertResumeItem(data);
+    revalidatePath("/");
+    revalidatePath("/resume");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to save resume entry.");
+  }
 }
 
 export async function deleteResumeItemServerAction(title: string) {
-  await requireAuth();
-  await deleteResumeItem(title);
-  revalidatePath("/");
-  revalidatePath("/resume");
-  revalidatePath("/admin");
-  return { ok: true };
+  try {
+    await requireAuth();
+    await deleteResumeItem(title);
+    revalidatePath("/");
+    revalidatePath("/resume");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to delete resume entry.");
+  }
+}
+
+function actionFailure(error: unknown, fallback: string): { ok: false; error: string } {
+  console.error(fallback, error);
+  return {
+    ok: false,
+    error: error instanceof Error ? error.message : fallback,
+  };
 }
 
 // Compatibility actions used by the admin panels.
@@ -267,21 +313,43 @@ export async function deleteArticleAction(id: string) {
   revalidatePath("/", "layout");
 }
 
-export async function upsertArticleGroupAction(_data: {
+export async function upsertArticleGroupAction(data: {
   id?: string;
   name: string;
   slug: string;
   description: string;
   coverImage?: string;
 }) {
-  await requireAuth();
-  revalidatePath("/", "layout");
+  try {
+    await requireAuth();
+    await upsertArticleGroup({
+      originalSlug: data.id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      coverImage: data.coverImage,
+    });
+    revalidatePath("/", "layout");
+    revalidatePath("/blog");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to save blog group.");
+  }
 }
 
-export async function deleteArticleGroupAction(_id: string) {
-  await requireAuth();
-  revalidatePath("/", "layout");
-  return { ok: true, message: undefined as string | undefined };
+export async function deleteArticleGroupAction(id: string) {
+  try {
+    await requireAuth();
+    await deleteArticleGroup(id);
+    revalidatePath("/", "layout");
+    revalidatePath("/blog");
+    revalidatePath("/admin");
+    return { ok: true, message: undefined as string | undefined };
+  } catch (error) {
+    const result = actionFailure(error, "Failed to delete blog group.");
+    return { ok: false, message: result.error } as const;
+  }
 }
 
 export async function upsertSkillAction(data: { id?: string; name: string; category: string; level: number }) {

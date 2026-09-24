@@ -9,6 +9,8 @@ import {
   deleteProjectServerAction,
   saveArticleServerAction,
   deleteArticleServerAction,
+  upsertArticleGroupAction,
+  deleteArticleGroupAction,
   saveSkillServerAction,
   deleteSkillServerAction,
   saveResumeItemServerAction,
@@ -24,9 +26,7 @@ import {
   PlusIcon,
   TrashIcon,
   EditIcon,
-  CheckIcon,
   LogOutIcon,
-  ExternalLinkIcon,
   ImageIcon,
   VideoIcon,
 } from "@/components/icons";
@@ -36,7 +36,11 @@ type Props = {
   dbHealth: { ok: boolean; database: string; message: string };
 };
 
-type Tab = "overview" | "profile" | "projects" | "blog" | "resume" | "skills" | "media";
+type Tab = "overview" | "profile" | "projects" | "blog" | "groups" | "resume" | "skills" | "media";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -66,7 +70,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await updateProfileServerAction({
+      const result = await updateProfileServerAction({
         name: profileForm.name,
         profession: profileForm.profession,
         tagline: profileForm.tagline,
@@ -78,9 +82,10 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
           interests: profileForm.interests.split(",").map((s) => s.trim()).filter(Boolean),
         },
       });
+      if (!result.ok) throw new Error(result.error);
       showStatus("Profile & About updated successfully!");
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to update profile", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to update profile"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -131,7 +136,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
 
       const techArray = editingProject.technologies.split(",").map((t) => t.trim()).filter(Boolean);
 
-      await saveProjectServerAction({
+      const result = await saveProjectServerAction({
         originalTitle: editingProject.originalTitle,
         title: editingProject.title,
         summary: editingProject.summary,
@@ -144,12 +149,13 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         customVariables: customVarsObj,
         content: editingProject.content,
       });
+      if (!result.ok) throw new Error(result.error);
 
       showStatus(`Project "${editingProject.title}" saved!`);
       setEditingProject(null);
       window.location.reload();
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to save project", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to save project"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -159,11 +165,12 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     if (!confirm(`Are you sure you want to delete project "${title}"?`)) return;
     setIsSaving(true);
     try {
-      await deleteProjectServerAction(title);
+      const result = await deleteProjectServerAction(title);
+      if (!result.ok) throw new Error(result.error);
       setProjectsList((prev) => prev.filter((p) => p.title !== title));
       showStatus(`Project "${title}" deleted`);
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to delete project", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to delete project"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -177,6 +184,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     originalSlug?: string;
     title: string;
     slug: string;
+    groupSlug: string;
     excerpt: string;
     publishedAt: string;
     content: string;
@@ -188,6 +196,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     setEditingArticle({
       title: "",
       slug: "",
+      groupSlug: portfolio.articleGroups[0]?.slug ?? "",
       excerpt: "",
       publishedAt: new Date().toISOString().split("T")[0],
       content: "Write your blog post here...",
@@ -201,22 +210,24 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     if (!editingArticle) return;
     setIsSaving(true);
     try {
-      await saveArticleServerAction({
+      const result = await saveArticleServerAction({
         originalSlug: editingArticle.originalSlug,
         title: editingArticle.title,
         slug: editingArticle.slug,
+        groupSlug: editingArticle.groupSlug,
         excerpt: editingArticle.excerpt,
         publishedAt: editingArticle.publishedAt,
         content: editingArticle.content,
         pictures: editingArticle.pictures,
         videos: editingArticle.videos,
       });
+      if (!result.ok) throw new Error(result.error);
 
       showStatus(`Article "${editingArticle.title}" saved!`);
       setEditingArticle(null);
       window.location.reload();
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to save article", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to save article"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -226,11 +237,66 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     if (!confirm(`Delete article with slug "${slug}"?`)) return;
     setIsSaving(true);
     try {
-      await deleteArticleServerAction(slug);
+      const result = await deleteArticleServerAction(slug);
+      if (!result.ok) throw new Error(result.error);
       setArticlesList((prev) => prev.filter((a) => a.slug !== slug));
       showStatus(`Article deleted`);
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to delete article", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to delete article"), "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ----------------------------------------------------
+  // Blog Groups CRUD
+  // ----------------------------------------------------
+  const [articleGroupsList, setArticleGroupsList] = useState(portfolio.articleGroups);
+  const [editingGroup, setEditingGroup] = useState<{
+    originalSlug?: string;
+    name: string;
+    slug: string;
+    description: string;
+    coverImage: string;
+  } | null>(null);
+
+  const startNewGroup = () => {
+    setEditingGroup({ name: "", slug: "", description: "", coverImage: "" });
+  };
+
+  const handleSaveGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGroup) return;
+    setIsSaving(true);
+    try {
+      const result = await upsertArticleGroupAction({
+        id: editingGroup.originalSlug,
+        name: editingGroup.name,
+        slug: editingGroup.slug,
+        description: editingGroup.description,
+        coverImage: editingGroup.coverImage,
+      });
+      if (!result.ok) throw new Error(result.error);
+      showStatus(`Blog group "${editingGroup.name}" saved!`);
+      setEditingGroup(null);
+      window.location.reload();
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to save blog group"), "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteGroup = async (slug: string, name: string) => {
+    if (!confirm(`Delete blog group "${name}"? Articles must be moved or deleted first.`)) return;
+    setIsSaving(true);
+    try {
+      const result = await deleteArticleGroupAction(slug);
+      if (!result.ok) throw new Error(result.message);
+      setArticleGroupsList((prev) => prev.filter((group) => group.slug !== slug));
+      showStatus(`Blog group "${name}" deleted`);
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to delete blog group"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -252,12 +318,13 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     if (!editingSkill) return;
     setIsSaving(true);
     try {
-      await saveSkillServerAction(editingSkill);
+      const result = await saveSkillServerAction(editingSkill);
+      if (!result.ok) throw new Error(result.error);
       showStatus(`Skill "${editingSkill.name}" saved!`);
       setEditingSkill(null);
       window.location.reload();
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to save skill", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to save skill"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -267,11 +334,12 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     if (!confirm(`Delete skill "${name}"?`)) return;
     setIsSaving(true);
     try {
-      await deleteSkillServerAction(name);
+      const result = await deleteSkillServerAction(name);
+      if (!result.ok) throw new Error(result.error);
       setSkillsList((prev) => prev.filter((s) => s.name !== name));
       showStatus(`Skill deleted`);
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to delete skill", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to delete skill"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -293,12 +361,13 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     if (!editingResume) return;
     setIsSaving(true);
     try {
-      await saveResumeItemServerAction(editingResume);
+      const result = await saveResumeItemServerAction(editingResume);
+      if (!result.ok) throw new Error(result.error);
       showStatus(`Resume entry "${editingResume.title}" saved!`);
       setEditingResume(null);
       window.location.reload();
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to save resume entry", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to save resume entry"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -308,11 +377,12 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     if (!confirm(`Delete resume entry "${title}"?`)) return;
     setIsSaving(true);
     try {
-      await deleteResumeItemServerAction(title);
+      const result = await deleteResumeItemServerAction(title);
+      if (!result.ok) throw new Error(result.error);
       setResumeList((prev) => prev.filter((r) => r.title !== title));
       showStatus(`Resume entry deleted`);
-    } catch (err: any) {
-      showStatus(err?.message || "Failed to delete resume entry", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to delete resume entry"), "error");
     } finally {
       setIsSaving(false);
     }
@@ -341,8 +411,8 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       setUploadedUrl(data.url);
       showStatus(`Uploaded ${data.filename} successfully!`);
       return data.url;
-    } catch (err: any) {
-      showStatus(err?.message || "File upload failed", "error");
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "File upload failed"), "error");
       return null;
     } finally {
       setUploading(false);
@@ -400,6 +470,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
           { id: "overview", label: "Overview", icon: LayersIcon },
           { id: "projects", label: `Projects (${projectsList.length})`, icon: BriefcaseIcon },
           { id: "blog", label: `Blog (${articlesList.length})`, icon: BookOpenIcon },
+          { id: "groups", label: `Blog Groups (${articleGroupsList.length})`, icon: LayersIcon },
           { id: "profile", label: "Profile & About", icon: UserIcon },
           { id: "resume", label: `Resume (${resumeList.length})`, icon: SlidersIcon },
           { id: "skills", label: `Skills (${skillsList.length})`, icon: SlidersIcon },
@@ -414,6 +485,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                 setActiveTab(tab.id as Tab);
                 setEditingProject(null);
                 setEditingArticle(null);
+                setEditingGroup(null);
                 setEditingSkill(null);
                 setEditingResume(null);
               }}
@@ -892,6 +964,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             originalSlug: article.slug,
                             title: article.title,
                             slug: article.slug,
+                            groupSlug: article.groupSlug,
                             excerpt: article.excerpt,
                             publishedAt: article.publishedAt,
                             content: article.content || "",
@@ -984,6 +1057,25 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                   />
                 </div>
 
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">
+                    Blog Group *
+                  </label>
+                  <select
+                    required
+                    value={editingArticle.groupSlug}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, groupSlug: e.target.value })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white"
+                  >
+                    <option value="">Choose a group</option>
+                    {articleGroupsList.map((group) => (
+                      <option key={group.slug} value={group.slug}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="md:col-span-2">
                   <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">
                     Summary / Excerpt *
@@ -1055,7 +1147,138 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         </div>
       )}
 
-      {/* Tab 4: PROFILE & ABOUT */}
+      {/* Tab 4: BLOG GROUPS CRUD */}
+      {activeTab === "groups" && (
+        <div className="mt-6 space-y-6">
+          {!editingGroup ? (
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-mono text-base font-black uppercase tracking-wider text-black dark:text-white">
+                    Manage Blog Groups
+                  </h2>
+                  <p className="mt-1 font-mono text-xs text-zinc-600 dark:text-zinc-400">
+                    Customize the labels and descriptions used to organize every article.
+                  </p>
+                </div>
+                <button
+                  onClick={startNewGroup}
+                  className="inline-flex items-center gap-1.5 border-2 border-black bg-[#ffe600] px-4 py-2 font-mono text-xs font-black uppercase tracking-wider text-black shadow-[3px_3px_0px_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Add Group</span>
+                </button>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {articleGroupsList.map((group) => (
+                  <div
+                    key={group.slug}
+                    className="flex flex-col justify-between border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    <div>
+                      <span className="border border-black bg-[#ffe600] px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-black">
+                        {group.articleCount} article{group.articleCount === 1 ? "" : "s"}
+                      </span>
+                      <h3 className="mt-3 font-mono text-base font-black uppercase text-black dark:text-white">
+                        {group.name}
+                      </h3>
+                      <p className="mt-1 font-mono text-xs text-zinc-500">/{group.slug}</p>
+                      <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{group.description}</p>
+                    </div>
+                    <div className="mt-5 flex items-center gap-2 border-t-2 border-black pt-3 dark:border-zinc-700">
+                      <button
+                        onClick={() =>
+                          setEditingGroup({
+                            originalSlug: group.slug,
+                            name: group.name,
+                            slug: group.slug,
+                            description: group.description,
+                            coverImage: group.coverImage || "",
+                          })
+                        }
+                        className="flex-1 inline-flex items-center justify-center gap-1 border-2 border-black bg-white py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_#000000] hover:bg-[#ffe600]"
+                      >
+                        <EditIcon className="h-3.5 w-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteGroup(group.slug, group.name)}
+                        className="inline-flex items-center justify-center border-2 border-black bg-red-100 p-2 text-red-700 shadow-[2px_2px_0px_#000000] hover:bg-red-200"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSaveGroup}
+              className="border-2 border-black bg-white p-6 shadow-[5px_5px_0px_#000000] dark:border-[#ffe600] dark:bg-zinc-900"
+            >
+              <div className="flex items-center justify-between border-b-2 border-black pb-3 dark:border-zinc-700">
+                <h3 className="font-mono text-base font-black uppercase text-black dark:text-white">
+                  {editingGroup.originalSlug ? "Edit Blog Group" : "Create Blog Group"}
+                </h3>
+                <button type="button" onClick={() => setEditingGroup(null)} className="font-mono text-xs font-bold underline">
+                  Cancel
+                </button>
+              </div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">Group Name *</label>
+                  <input
+                    required
+                    value={editingGroup.name}
+                    onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">URL Slug *</label>
+                  <input
+                    required
+                    value={editingGroup.slug}
+                    onChange={(e) => setEditingGroup({ ...editingGroup, slug: e.target.value })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">Description *</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={editingGroup.description}
+                    onChange={(e) => setEditingGroup({ ...editingGroup, description: e.target.value })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">Cover Image URL</label>
+                  <input
+                    value={editingGroup.coverImage}
+                    onChange={(e) => setEditingGroup({ ...editingGroup, coverImage: e.target.value })}
+                    placeholder="/uploads/blog-group-cover.png (optional)"
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3 border-t-2 border-black pt-4">
+                <button type="button" onClick={() => setEditingGroup(null)} className="border-2 border-black bg-white px-5 py-2 font-mono text-xs font-bold uppercase">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSaving} className="border-2 border-black bg-[#ffe600] px-6 py-2 font-mono text-xs font-black uppercase shadow-[3px_3px_0px_#000000]">
+                  {isSaving ? "Saving..." : "Save Group"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* Tab 5: PROFILE & ABOUT */}
       {activeTab === "profile" && (
         <form
           onSubmit={handleProfileSubmit}

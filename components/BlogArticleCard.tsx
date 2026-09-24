@@ -2,13 +2,24 @@
 
 import { useRouter } from "next/navigation";
 import { BookOpenIcon, CalendarIcon, ArrowRightIcon } from "@/components/icons";
-import type { PortfolioContent } from "@/lib/portfolio-db";
 
-type BlogArticleCardProps = {
-  article: PortfolioContent["articles"][number];
+export type BlogArticleCardData = {
+  title: string;
+  excerpt: string;
+  slug: string;
+  groupSlug: string;
+  groupName?: string;
+  publishedAt: string;
+  content: string;
+  pictures: string[];
 };
 
-export default function BlogArticleCard({ article }: BlogArticleCardProps) {
+type BlogArticleCardProps = {
+  article: BlogArticleCardData;
+  featured?: boolean;
+};
+
+export default function BlogArticleCard({ article, featured = false }: BlogArticleCardProps) {
   const router = useRouter();
 
   function open() {
@@ -28,9 +39,15 @@ export default function BlogArticleCard({ article }: BlogArticleCardProps) {
           open();
         }
       }}
-      className="group flex h-full cursor-pointer flex-col border-2 border-black bg-white p-6 shadow-[4px_4px_0px_#000000] transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[7px_7px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff] dark:hover:shadow-[7px_7px_0px_#ffffff]"
+      className={`group flex h-full cursor-pointer flex-col border-2 border-black bg-white p-6 shadow-[4px_4px_0px_#000000] transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[7px_7px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff] dark:hover:shadow-[7px_7px_0px_#ffffff] ${
+        featured ? "md:col-span-2 xl:col-span-2" : ""
+      }`}
     >
-      <div className="relative h-36 shrink-0 overflow-hidden border-2 border-black bg-blue-600 bg-geo-dots flex items-center justify-center dark:border-blue-400">
+      <div
+        className={`relative shrink-0 overflow-hidden border-2 border-black bg-blue-600 bg-geo-dots flex items-center justify-center dark:border-blue-400 ${
+          featured ? "h-56 sm:h-72" : "h-36"
+        }`}
+      >
         {firstPic ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={firstPic} alt={article.title} className="w-full h-full object-cover" />
@@ -42,13 +59,20 @@ export default function BlogArticleCard({ article }: BlogArticleCardProps) {
       </div>
 
       <div className="mt-4 flex items-center justify-between font-mono text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+        <span className="border border-black bg-[#ffe600] px-2 py-0.5 text-black dark:bg-blue-500 dark:text-white">
+          {article.groupName || article.groupSlug}
+        </span>
         <span className="inline-flex items-center gap-1 border border-black bg-zinc-100 px-2 py-0.5 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
           <CalendarIcon className="h-3 w-3" />
           <span>{article.publishedAt}</span>
         </span>
       </div>
 
-      <h3 className="mt-3 font-mono text-lg font-black uppercase text-black dark:text-white line-clamp-2">
+      <h3
+        className={`mt-3 font-mono font-black uppercase text-black dark:text-white line-clamp-2 ${
+          featured ? "text-2xl sm:text-3xl" : "text-lg"
+        }`}
+      >
         {article.title}
       </h3>
       <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400 line-clamp-3">

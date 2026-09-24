@@ -1,5 +1,5 @@
 import SectionTitle from "@/components/SectionTitle";
-import BlogGroupCard from "@/components/BlogGroupCard";
+import BlogBrowser from "@/components/BlogBrowser";
 import { getPortfolioContent } from "@/lib/portfolio-db";
 import type { Metadata } from "next";
 
@@ -8,22 +8,34 @@ export const metadata: Metadata = {
   description: "Notes and practical engineering thoughts from Quang Minh.",
 };
 
-export default async function BlogPage() {
+type PageProps = {
+  searchParams?: Promise<{ group?: string }>;
+};
+
+export default async function BlogPage({ searchParams }: PageProps) {
   const portfolio = await getPortfolioContent();
+  const filters = searchParams ? await searchParams : {};
+  const groupNames = new Map(portfolio.articleGroups.map((group) => [group.slug, group.name]));
+  const articles = portfolio.articles.map((article) => ({
+    title: article.title,
+    excerpt: article.excerpt,
+    slug: article.slug,
+    groupSlug: article.groupSlug,
+    groupName: groupNames.get(article.groupSlug),
+    publishedAt: article.publishedAt,
+    content: article.content,
+    pictures: article.pictures,
+  }));
+  const groups = portfolio.articleGroups.map((group) => ({ name: group.name, slug: group.slug }));
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
       <SectionTitle
         eyebrow="Blog"
         title="Notes, tutorials, and engineering thoughts"
-        description="Posts are organized into groups — pick one to see what's inside."
+        description="Browse every note in one place. Search, filter, and sort the archive to find your next read."
       />
-
-      <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {portfolio.articleGroups.map((group) => (
-          <BlogGroupCard key={group.slug} group={group} />
-        ))}
-      </section>
+      <BlogBrowser articles={articles} groups={groups} initialGroup={filters.group || "all"} />
     </main>
   );
 }
