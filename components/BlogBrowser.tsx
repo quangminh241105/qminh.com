@@ -61,7 +61,7 @@ export default function BlogBrowser({ articles, groups, initialGroup = "all" }: 
             <SlidersIcon className="h-4 w-4" />
             <span>Blog browser / {visibleArticles.length} result{visibleArticles.length === 1 ? "" : "s"}</span>
           </div>
-          <button type="button" onClick={resetFilters} className="border-2 border-black bg-white px-3 py-1.5 font-mono text-[11px] font-black uppercase text-black shadow-[2px_2px_0px_#000000] transition-transform hover:-translate-y-0.5">
+          <button type="button" onClick={resetFilters} className="border-2 border-red-700 bg-red-100 px-3 py-1.5 font-mono text-[11px] font-black uppercase text-red-900 shadow-[2px_2px_0px_#000000] transition-transform hover:-translate-y-0.5 dark:border-red-500 dark:bg-red-950 dark:text-red-200">
             Reset filters
           </button>
         </div>

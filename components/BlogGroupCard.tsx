@@ -35,7 +35,7 @@ export default function BlogGroupCard({ group }: BlogGroupCardProps) {
       </div>
 
       <div className="mt-4 flex items-center justify-between font-mono text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-zinc-300">
-        <span className="border border-black bg-stone-100 px-2 py-0.5 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
+        <span className="border border-black bg-[#ffe600] px-2 py-0.5 text-black dark:border-yellow-400 dark:bg-yellow-500 dark:text-black">
           Category
         </span>
       </div>
@@ -43,12 +43,12 @@ export default function BlogGroupCard({ group }: BlogGroupCardProps) {
       <h3 className="mt-3 font-mono text-lg font-black uppercase text-black dark:text-white">
         {group.name}
       </h3>
-      <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400 line-clamp-3">
+      <p className="mt-2 line-clamp-3 text-sm leading-6 text-green-700 dark:text-green-300">
         {group.description}
       </p>
 
       <div className="mt-auto pt-6 border-t-2 border-black dark:border-zinc-700">
-        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-black uppercase tracking-wider text-stone-700 group-hover:text-black dark:text-zinc-300 dark:group-hover:text-white">
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-black uppercase tracking-wider text-blue-700 group-hover:text-blue-900 dark:text-blue-300 dark:group-hover:text-white">
           <span>Browse posts</span>
           <ArrowRightIcon className="h-3.5 w-3.5" />
         </span>
