@@ -14,7 +14,7 @@ export default async function Navbar() {
           href="/"
           className="group flex items-center gap-2 font-mono text-base font-black uppercase tracking-wider text-black dark:text-blue-300"
         >
-          <span className="flex h-7 w-7 items-center justify-center border-2 border-black bg-[#ffe600] text-black shadow-[2px_2px_0px_#000000] group-hover:rotate-6 transition-transform">
+          <span className="flex h-7 w-7 items-center justify-center border-2 border-black bg-[#ffe600] text-black shadow-[2px_2px_0px_#000000] transition-transform group-hover:rotate-6">
             <TerminalIcon className="h-4 w-4" />
           </span>
           <span>{portfolio.name}</span>
@@ -25,7 +25,7 @@ export default async function Navbar() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black transition-colors hover:bg-blue-600 hover:text-white dark:text-zinc-200 dark:hover:bg-blue-500 dark:hover:text-white"
+                className="px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black hover:bg-blue-600 hover:text-white dark:text-zinc-200 dark:hover:bg-blue-500 dark:hover:text-white"
               >
                 {item.label}
               </Link>
@@ -37,7 +37,7 @@ export default async function Navbar() {
           <ThemeToggle />
           <Link
             href="/contact"
-            className="hidden sm:inline-flex items-center gap-1.5 border-2 border-black bg-[#ffe600] px-3.5 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 dark:shadow-[2px_2px_0px_#000000] dark:hover:shadow-[3px_3px_0px_#000000]"
+            className="hidden sm:inline-flex items-center gap-1.5 border-2 border-black bg-[#ffe600] px-3.5 py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 dark:shadow-[2px_2px_0px_#000000] dark:hover:shadow-[3px_3px_0px_#000000]"
           >
             Hire Me
           </Link>

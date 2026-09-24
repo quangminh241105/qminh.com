@@ -42,12 +42,29 @@ export type PortfolioContent = {
 
 let bootstrapped = false;
 
-function withInstagramLink(socialLinks: SocialLink[]): SocialLink[] {
-  if (socialLinks.some((link) => link.label.toLowerCase().includes("instagram"))) {
-    return socialLinks;
+function withCanonicalSocialLinks(socialLinks: SocialLink[]): SocialLink[] {
+  const defaultSocialLinks = portfolioStore.socialLinks;
+  const normalizedLinks = socialLinks.map((link) => {
+    const normalizedLabel = link.label.toLowerCase();
+    const defaultLink = defaultSocialLinks.find((candidate) => {
+      const candidateLabel = candidate.label.toLowerCase();
+      return (
+        (candidateLabel.includes("git") && normalizedLabel.includes("git")) ||
+        (candidateLabel.includes("link") && normalizedLabel.includes("link")) ||
+        (candidateLabel.includes("instagram") && normalizedLabel.includes("instagram")) ||
+        (candidateLabel.includes("mail") && (normalizedLabel.includes("mail") || normalizedLabel.includes("email")))
+      );
+    });
+
+    return defaultLink ? { ...link, href: defaultLink.href } : link;
+  });
+
+  if (!normalizedLinks.some((link) => link.label.toLowerCase().includes("instagram"))) {
+    const instagramLink = defaultSocialLinks.find((link) => link.label.toLowerCase().includes("instagram"));
+    if (instagramLink) normalizedLinks.push(instagramLink);
   }
 
-  return [...socialLinks, { label: "Instagram", href: "https://www.instagram.com/" }];
+  return normalizedLinks;
 }
 
 async function getDb(): Promise<Db> {
@@ -293,7 +310,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       tagline: profileDoc.tagline || portfolioStore.tagline,
       location: profileDoc.location || portfolioStore.location,
       navItems: Array.isArray(profileDoc.navItems) ? profileDoc.navItems : [...portfolioStore.navItems],
-      socialLinks: withInstagramLink(
+      socialLinks: withCanonicalSocialLinks(
         Array.isArray(profileDoc.socialLinks) ? profileDoc.socialLinks : [...portfolioStore.socialLinks],
       ),
       quickSummary: Array.isArray(profileDoc.quickSummary) ? profileDoc.quickSummary : [...portfolioStore.quickSummary],

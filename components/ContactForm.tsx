@@ -15,7 +15,7 @@ export default function ContactForm() {
     event.preventDefault();
     const subject = encodeURIComponent(`Portfolio contact from ${name}`);
     const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`);
-    window.location.href = `mailto:hello@qminh.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:phamlequangminh2411@gmail.com?subject=${subject}&body=${body}`;
   }
 
   return (

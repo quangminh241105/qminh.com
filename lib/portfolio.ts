@@ -143,10 +143,10 @@ export class PortfolioStore {
   ];
 
   readonly socialLinks: SocialLink[] = [
-    { label: "GitHub", href: "https://github.com/" },
-    { label: "LinkedIn", href: "https://www.linkedin.com/" },
-    { label: "Instagram", href: "https://www.instagram.com/" },
-    { label: "Email", href: "mailto:hello@qminh.com" },
+    { label: "GitHub", href: "https://github.com/quangminh241105" },
+    { label: "LinkedIn", href: "https://www.linkedin.com/in/qminh2005" },
+    { label: "Instagram", href: "https://www.instagram.com/qminh1142" },
+    { label: "Email", href: "mailto:phamlequangminh2411@gmail.com" },
   ];
 
   readonly about = {
