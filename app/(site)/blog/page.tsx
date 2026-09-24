@@ -29,11 +29,12 @@ export default async function BlogPage({ searchParams }: PageProps) {
   const groups = portfolio.articleGroups.map((group) => ({ name: group.name, slug: group.slug }));
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       <SectionTitle
         eyebrow="Blog"
         title="Notes, tutorials, and engineering thoughts"
         description="Browse every note in one place. Search, filter, and sort the archive to find your next read."
+        tone="neutral"
       />
       <BlogBrowser articles={articles} groups={groups} initialGroup={filters.group || "all"} />
     </main>

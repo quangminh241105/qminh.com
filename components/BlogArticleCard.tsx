@@ -39,12 +39,12 @@ export default function BlogArticleCard({ article, featured = false }: BlogArtic
           open();
         }
       }}
-      className={`group flex h-full cursor-pointer flex-col border-2 border-black bg-white p-6 shadow-[4px_4px_0px_#000000] transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[7px_7px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff] dark:hover:shadow-[7px_7px_0px_#ffffff] ${
+      className={`group flex h-full cursor-pointer flex-col border-2 border-black bg-white p-6 shadow-[4px_4px_0px_#000000] transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[7px_7px_0px_#000000] dark:border-zinc-500 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff] dark:hover:shadow-[7px_7px_0px_#ffffff] ${
         featured ? "md:col-span-2 xl:col-span-2" : ""
       }`}
     >
       <div
-        className={`relative shrink-0 overflow-hidden border-2 border-black bg-blue-600 bg-geo-dots flex items-center justify-center dark:border-blue-400 ${
+        className={`relative flex shrink-0 items-center justify-center overflow-hidden border-2 border-black bg-stone-300 bg-geo-dots dark:border-zinc-500 dark:bg-zinc-700 ${
           featured ? "h-56 sm:h-72" : "h-36"
         }`}
       >
@@ -58,11 +58,11 @@ export default function BlogArticleCard({ article, featured = false }: BlogArtic
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between font-mono text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-        <span className="border border-black bg-[#ffe600] px-2 py-0.5 text-black dark:bg-blue-500 dark:text-white">
+      <div className="mt-4 flex items-center justify-between font-mono text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-zinc-300">
+        <span className="border border-black bg-stone-200 px-2 py-0.5 text-stone-900 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100">
           {article.groupName || article.groupSlug}
         </span>
-        <span className="inline-flex items-center gap-1 border border-black bg-zinc-100 px-2 py-0.5 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
+        <span className="inline-flex items-center gap-1 border border-black bg-stone-100 px-2 py-0.5 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
           <CalendarIcon className="h-3 w-3" />
           <span>{article.publishedAt}</span>
         </span>
@@ -80,7 +80,7 @@ export default function BlogArticleCard({ article, featured = false }: BlogArtic
       </p>
 
       <div className="mt-auto pt-6 border-t-2 border-black dark:border-zinc-700">
-        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-black uppercase tracking-wider text-blue-700 group-hover:text-blue-900 dark:text-blue-300 dark:group-hover:text-white">
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-black uppercase tracking-wider text-stone-700 group-hover:text-black dark:text-zinc-300 dark:group-hover:text-white">
           <span>Read article</span>
           <ArrowRightIcon className="h-3.5 w-3.5" />
         </span>

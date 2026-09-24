@@ -55,7 +55,7 @@ export default function BlogBrowser({ articles, groups, initialGroup = "all" }: 
 
   return (
     <section className="mt-8">
-      <div className="border-2 border-black bg-[#ffe600] p-4 shadow-[4px_4px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff]">
+      <div className="border-2 border-black bg-stone-100 p-4 shadow-[4px_4px_0px_#000000] dark:border-zinc-600 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-black pb-3 dark:border-zinc-700">
           <div className="flex items-center gap-2 font-mono text-xs font-black uppercase text-black dark:text-white">
             <SlidersIcon className="h-4 w-4" />
@@ -69,7 +69,7 @@ export default function BlogBrowser({ articles, groups, initialGroup = "all" }: 
         <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <label className="lg:col-span-2">
             <span className="sr-only">Search blog</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title or excerpt..." className="w-full border-2 border-black bg-white p-2.5 font-mono text-xs text-black outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-blue-500" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title or excerpt..." className="w-full border-2 border-black bg-white p-2.5 font-mono text-xs text-black outline-none placeholder:text-zinc-500 focus:ring-2 focus:ring-stone-500" />
           </label>
           <label>
             <span className="sr-only">Filter by group</span>
@@ -97,7 +97,7 @@ export default function BlogBrowser({ articles, groups, initialGroup = "all" }: 
               {years.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </label>
-          <span className="font-mono text-[11px] font-bold uppercase text-black/70 dark:text-zinc-400">Newest matching note gets the big card.</span>
+          <span className="font-mono text-[11px] font-bold uppercase text-stone-600 dark:text-zinc-400">Newest matching note gets the big card.</span>
         </div>
       </div>
 
