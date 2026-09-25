@@ -50,6 +50,18 @@ function getErrorMessage(error: unknown, fallback: string) {
   return message || fallback;
 }
 
+function uploadSlug(value: string, fallback = "untitled") {
+  const normalized = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  return normalized || fallback;
+}
+
 export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -410,11 +422,12 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  const handleFileUpload = async (file: File): Promise<string | null> => {
+  const handleFileUpload = async (file: File, folder = "media"): Promise<string | null> => {
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", folder);
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -770,7 +783,10 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const url = await handleFileUpload(file);
+                            const url = await handleFileUpload(
+                              file,
+                              `projects/${uploadSlug(editingProject.title)}/thumbnail`,
+                            );
                             if (url) setEditingProject({ ...editingProject, thumbnail: url });
                           }
                           e.target.value = "";
@@ -819,7 +835,10 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const url = await handleFileUpload(file);
+                            const url = await handleFileUpload(
+                              file,
+                              `projects/${uploadSlug(editingProject.title)}/screenshots`,
+                            );
                             if (url) {
                               setEditingProject({
                                 ...editingProject,
@@ -1204,7 +1223,10 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const url = await handleFileUpload(file);
+                            const url = await handleFileUpload(
+                              file,
+                              `blogs/${uploadSlug(editingArticle.groupSlug, "uncategorized")}/${uploadSlug(editingArticle.slug || editingArticle.title)}/thumbnail`,
+                            );
                             if (url) setEditingArticle({ ...editingArticle, thumbnail: url });
                           }
                           e.target.value = "";
@@ -1252,11 +1274,17 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            const url = await handleFileUpload(file);
+                            const url = await handleFileUpload(
+                              file,
+                              `blogs/${uploadSlug(editingArticle.groupSlug, "uncategorized")}/${uploadSlug(editingArticle.slug || editingArticle.title)}/content`,
+                            );
                             if (url) {
                               setEditingArticle({
                                 ...editingArticle,
                                 content: editingArticle.content + `\n\n![${file.name}](${url})\n`,
+                                pictures: editingArticle.pictures.includes(url)
+                                  ? editingArticle.pictures
+                                  : [...editingArticle.pictures, url],
                               });
                             }
                           }
@@ -1404,11 +1432,46 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">Cover Image URL</label>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">Cover Image</label>
+                    <label className="cursor-pointer border border-black bg-white px-2 py-1 font-mono text-[10px] font-bold uppercase hover:bg-[#ffe600]">
+                      Upload Cover
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = await handleFileUpload(
+                              file,
+                              `blogs/groups/${uploadSlug(editingGroup.slug || editingGroup.name, "untitled")}`,
+                            );
+                            if (url) setEditingGroup({ ...editingGroup, coverImage: url });
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {editingGroup.coverImage && (
+                    <div className="relative mt-2 w-fit border border-black bg-white p-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={editingGroup.coverImage} alt="Blog group cover preview" className="h-20 w-36 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingGroup({ ...editingGroup, coverImage: "" })}
+                        className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+                        aria-label="Remove blog group cover"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                   <input
                     value={editingGroup.coverImage}
                     onChange={(e) => setEditingGroup({ ...editingGroup, coverImage: e.target.value })}
-                    placeholder="/uploads/blog-group-cover.png (optional)"
+                    placeholder="Paste cover URL or upload an image"
                     className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
                   />
                 </div>
@@ -1521,7 +1584,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const url = await handleFileUpload(file);
+                        const url = await handleFileUpload(file, "profile/avatar");
                         if (url) setProfileForm({ ...profileForm, avatar: url });
                       }
                       e.target.value = "";

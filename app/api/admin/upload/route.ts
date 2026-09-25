@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticatedAdmin } from "@/lib/auth";
 import { writeFile, mkdir } from "fs/promises";
+import { randomUUID } from "crypto";
 import path from "path";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,30 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+function safePathSegment(value: string, fallback: string) {
+  const normalized = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  return normalized || fallback;
+}
+
+function safeUploadFolder(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") return ["misc"];
+
+  const segments = value
+    .split(/[\\/]+/)
+    .map((segment) => safePathSegment(segment, ""))
+    .filter(Boolean)
+    .slice(0, 5);
+
+  return segments.length > 0 ? segments : ["misc"];
+}
 
 export async function POST(req: NextRequest) {
   const isAuth = await isAuthenticatedAdmin();
@@ -52,30 +77,33 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Sanitize filename and create unique timestamped name
-    const ext = path.extname(file.name) || `.${file.type.split("/")[1]}`;
-    const baseName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, "_");
-    const uniqueFilename = `${baseName}_${Date.now()}${ext}`;
+    const folderSegments = safeUploadFolder(formData.get("folder"));
+    const originalExtension = path.extname(file.name).toLowerCase();
+    const extension = originalExtension || `.${file.type.split("/")[1]}`;
+    const baseName = safePathSegment(path.basename(file.name, originalExtension), "upload");
+    const uniqueFilename = `${baseName}-${new Date().toISOString().replace(/[-:.TZ]/g, "")}-${randomUUID().slice(0, 8)}${extension}`;
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    const uploadsDir = path.join(process.cwd(), "public", "uploads", ...folderSegments);
     await mkdir(uploadsDir, { recursive: true });
 
     const filePath = path.join(uploadsDir, uniqueFilename);
     await writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/${uniqueFilename}`;
+    const relativePath = [...folderSegments, uniqueFilename].join("/");
+    const publicUrl = `/uploads/${relativePath}`;
 
     return NextResponse.json({
       ok: true,
       url: publicUrl,
       filename: uniqueFilename,
+      folder: folderSegments.join("/"),
       size: file.size,
       type: file.type,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      { error: error?.message || "Internal server error during upload" },
+      { error: error instanceof Error ? error.message : "Internal server error during upload" },
       { status: 500 }
     );
   }
