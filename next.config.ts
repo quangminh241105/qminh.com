@@ -10,7 +10,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "media-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://westreamf1.st",
       "connect-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
