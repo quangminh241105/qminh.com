@@ -17,7 +17,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const projectSlug = getProjectSlug(project);
   const visibleTechnologies = project.technologies.slice(0, MAX_VISIBLE_TECHNOLOGIES);
   const hiddenCount = project.technologies.length - visibleTechnologies.length;
-  const firstPicture = project.pictures && project.pictures.length > 0 ? project.pictures[0] : null;
+  const firstPicture = project.thumbnail || (project.pictures && project.pictures.length > 0 ? project.pictures[0] : null);
 
   function openProjectPage() {
     router.push(`/projects/${projectSlug}`);

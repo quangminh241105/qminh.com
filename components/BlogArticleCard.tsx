@@ -11,6 +11,7 @@ export type BlogArticleCardData = {
   groupName?: string;
   publishedAt: string;
   content: string;
+  thumbnail?: string;
   pictures: string[];
 };
 
@@ -26,7 +27,7 @@ export default function BlogArticleCard({ article, featured = false }: BlogArtic
     router.push(`/blog/${article.groupSlug}/${article.slug}`);
   }
 
-  const firstPic = article.pictures && article.pictures.length > 0 ? article.pictures[0] : null;
+  const firstPic = article.thumbnail || (article.pictures && article.pictures.length > 0 ? article.pictures[0] : null);
 
   return (
     <article

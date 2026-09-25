@@ -66,6 +66,7 @@ export type PortfolioContent = {
   profession: string;
   tagline: string;
   location: string;
+  avatar?: string;
   navItems: NavItem[];
   socialLinks: SocialLink[];
   quickSummary: string[];
@@ -157,6 +158,7 @@ async function ensureBootstrapped(db: Db) {
         profession: portfolioStore.profession,
         tagline: portfolioStore.tagline,
         location: portfolioStore.location,
+        avatar: portfolioStore.avatar,
         navItems: portfolioStore.navItems,
         socialLinks: portfolioStore.socialLinks,
         quickSummary: portfolioStore.quickSummary,
@@ -197,6 +199,7 @@ async function ensureBootstrapped(db: Db) {
           repoUrl: p.repoUrl,
           demoUrl: p.demoUrl,
           featured: p.featured,
+          thumbnail: p.thumbnail || p.pictures[0] || "",
           pictures: p.pictures,
           videos: p.videos,
           customVariables: p.customVariables,
@@ -257,6 +260,7 @@ async function ensureBootstrapped(db: Db) {
           slug: a.slug,
           groupSlug: a.groupSlug,
           publishedAt: a.publishedAt,
+          thumbnail: a.thumbnail || a.pictures[0] || "",
           content: a.content,
           pictures: a.pictures,
           videos: a.videos,
@@ -321,6 +325,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       const technologies = Array.isArray(p.technologies) ? p.technologies : [];
       const pictures = Array.isArray(p.pictures) ? p.pictures : [];
       const videos = Array.isArray(p.videos) ? p.videos : [];
+      const thumbnail = typeof p.thumbnail === "string" && p.thumbnail.trim() ? p.thumbnail : pictures[0];
       const customVariables =
         typeof p.customVariables === "object" && p.customVariables !== null ? p.customVariables : {};
       return {
@@ -331,6 +336,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
         repoUrl: p.repoUrl || "",
         demoUrl: p.demoUrl || "",
         featured: Boolean(p.featured),
+        thumbnail,
         pictures,
         videos,
         customVariables,
@@ -350,21 +356,31 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       order: t.order,
     }));
 
-    const plainArticles = dbArticles.map((a: any) => ({
-      id: a._id?.toString?.() ?? a.slug,
-      title: a.title,
-      excerpt: a.excerpt,
-      slug: a.slug,
-      groupSlug: a.groupSlug || "engineering-notes",
-      publishedAt: a.publishedAt,
-      content: a.content || "",
-      pictures: Array.isArray(a.pictures) ? a.pictures : [],
-      videos: Array.isArray(a.videos) ? a.videos : [],
-      body: a.content || "",
-      coverImage: Array.isArray(a.pictures) ? a.pictures[0] : undefined,
-      videoUrl: Array.isArray(a.videos) ? a.videos[0] : undefined,
-      order: a.order,
-    }));
+    const plainArticles = dbArticles.map((a: any) => {
+      const pictures = Array.isArray(a.pictures) ? a.pictures : [];
+      const legacyCoverImage = typeof a.coverImage === "string" && a.coverImage.trim() ? a.coverImage : undefined;
+      const thumbnail = typeof a.thumbnail === "string" && a.thumbnail.trim()
+        ? a.thumbnail
+        : legacyCoverImage || pictures[0];
+      const content = a.content || a.body || "";
+
+      return {
+        id: a._id?.toString?.() ?? a.slug,
+        title: a.title,
+        excerpt: a.excerpt,
+        slug: a.slug,
+        groupSlug: a.groupSlug || "engineering-notes",
+        publishedAt: a.publishedAt,
+        content,
+        pictures,
+        videos: Array.isArray(a.videos) ? a.videos : [],
+        thumbnail,
+        body: content,
+        coverImage: thumbnail,
+        videoUrl: Array.isArray(a.videos) ? a.videos[0] : a.videoUrl,
+        order: a.order,
+      };
+    });
 
     const plainArticleGroups = dbArticleGroups.map((group: any) => ({
       id: group.slug,
@@ -405,6 +421,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       profession: profileDoc.profession || portfolioStore.profession,
       tagline: profileDoc.tagline || portfolioStore.tagline,
       location: profileDoc.location || portfolioStore.location,
+      avatar: typeof profileDoc.avatar === "string" && profileDoc.avatar.trim() ? profileDoc.avatar : portfolioStore.avatar,
       navItems: normalizeNavItems(profileDoc.navItems),
       socialLinks: withCanonicalSocialLinks(normalizeSocialLinks(profileDoc.socialLinks)),
       quickSummary: withUpdatedQuickSummary(normalizeStringArray(profileDoc.quickSummary, portfolioStore.quickSummary)),
@@ -435,6 +452,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       profession: portfolioStore.profession,
       tagline: portfolioStore.tagline,
       location: portfolioStore.location,
+      avatar: portfolioStore.avatar,
       navItems: [...portfolioStore.navItems],
       socialLinks: withCanonicalSocialLinks([...portfolioStore.socialLinks]),
       quickSummary: [...portfolioStore.quickSummary],
@@ -457,6 +475,7 @@ export async function updateProfile(data: {
   profession: string;
   tagline: string;
   location: string;
+  avatar?: string;
   navItems?: NavItem[];
   socialLinks?: SocialLink[];
   quickSummary: string[];
@@ -494,6 +513,7 @@ export async function upsertProject(project: {
   repoUrl: string;
   demoUrl: string;
   featured: boolean;
+  thumbnail?: string;
   pictures?: string[];
   videos?: string[];
   customVariables?: Record<string, string>;
@@ -520,6 +540,7 @@ export async function upsertProject(project: {
           repoUrl: project.repoUrl,
           demoUrl: project.demoUrl,
           featured: project.featured,
+          thumbnail: project.thumbnail?.trim() || project.pictures?.[0] || "",
           pictures: project.pictures || [],
           videos: project.videos || [],
           customVariables: project.customVariables || {},
@@ -599,6 +620,7 @@ export async function upsertArticle(article: {
   slug: string;
   groupSlug?: string;
   publishedAt: string;
+  thumbnail?: string;
   content: string;
   pictures?: string[];
   videos?: string[];
@@ -624,6 +646,7 @@ export async function upsertArticle(article: {
           groupSlug: article.groupSlug || "engineering-notes",
           publishedAt: article.publishedAt,
           content: article.content,
+          thumbnail: article.thumbnail?.trim() || article.pictures?.[0] || "",
           pictures: article.pictures || [],
           videos: article.videos || [],
           order: typeof article.order === "number" ? article.order : count,

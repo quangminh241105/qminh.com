@@ -32,6 +32,7 @@ export class Skill {
 export class Project {
   public readonly id: string;
   public readonly images: string[];
+  public readonly thumbnail: string | undefined;
   public readonly videoUrl: string | undefined;
   public readonly customVars: Record<string, string>;
 
@@ -47,9 +48,11 @@ export class Project {
     public readonly customVariables: Record<string, string> = {},
     public readonly content: string = "",
     public readonly order?: number,
+    thumbnail?: string,
   ) {
     this.id = title;
     this.images = pictures;
+    this.thumbnail = thumbnail || pictures[0];
     this.videoUrl = videos[0];
     this.customVars = customVariables;
   }
@@ -72,6 +75,7 @@ export class Testimonial {
 export class Article {
   public readonly id: string;
   public readonly body: string;
+  public readonly thumbnail: string | undefined;
   public readonly coverImage: string | undefined;
   public readonly videoUrl: string | undefined;
 
@@ -85,10 +89,12 @@ export class Article {
     public readonly pictures: string[] = [],
     public readonly videos: string[] = [],
     public readonly order?: number,
+    thumbnail?: string,
   ) {
     this.id = slug;
     this.body = content;
-    this.coverImage = pictures[0];
+    this.thumbnail = thumbnail || pictures[0];
+    this.coverImage = this.thumbnail;
     this.videoUrl = videos[0];
   }
 }
@@ -126,6 +132,7 @@ export class PortfolioStore {
   readonly profession = "IT Student";
   readonly tagline = "Building reliable web apps with clean architecture and practical UX.";
   readonly location = "Ho Chi Minh City, Vietnam";
+  readonly avatar: string | undefined = undefined;
   readonly resumeFile: ResumeFile | undefined = undefined;
   readonly quickSummary = [
     "Focused on scalable frontend architecture",

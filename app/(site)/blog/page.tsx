@@ -24,6 +24,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
     groupName: groupNames.get(article.groupSlug),
     publishedAt: article.publishedAt,
     content: article.content,
+    thumbnail: article.thumbnail,
     pictures: article.pictures,
   }));
   const groups = portfolio.articleGroups.map((group) => ({ name: group.name, slug: group.slug }));

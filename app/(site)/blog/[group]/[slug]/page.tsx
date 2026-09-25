@@ -30,6 +30,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  const coverImage = article.thumbnail || article.pictures[0];
   const bodyHtml = marked.parse(article.content?.trim() || article.excerpt, { async: false }) as string;
 
   return (
@@ -51,9 +52,9 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       </section>
 
       <section className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        {article.pictures.length > 0 ? (
+        {coverImage ? (
           <div className="relative mb-8 h-64 w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 sm:h-96">
-            <Image src={article.pictures[0]} alt={article.title} fill className="object-cover" />
+            <Image src={coverImage} alt={article.title} fill className="object-cover" />
           </div>
         ) : null}
 

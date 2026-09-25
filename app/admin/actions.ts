@@ -67,6 +67,7 @@ export async function updateProfileServerAction(data: {
   profession: string;
   tagline: string;
   location: string;
+  avatar?: string;
   quickSummary: string[];
   about: { intro: string; background: string; interests: string[] };
 }) {
@@ -89,6 +90,7 @@ export async function saveProjectServerAction(data: {
   repoUrl: string;
   demoUrl: string;
   featured: boolean;
+  thumbnail?: string;
   pictures: string[];
   videos: string[];
   customVariables: Record<string, string>;
@@ -127,6 +129,7 @@ export async function saveArticleServerAction(data: {
   slug: string;
   groupSlug?: string;
   publishedAt: string;
+  thumbnail?: string;
   content: string;
   pictures: string[];
   videos: string[];
@@ -250,6 +253,7 @@ export async function updateProfileAction(data: {
   profession: string;
   tagline: string;
   location: string;
+  avatar?: string;
   navItems?: unknown;
   socialLinks?: unknown;
   resumeFile?: unknown;
@@ -269,6 +273,7 @@ export async function upsertProjectAction(data: {
   repoUrl: string;
   demoUrl: string;
   featured: boolean;
+  thumbnail?: string;
   images?: string[];
   videoUrl?: string;
   customVars?: Record<string, string>;
@@ -281,6 +286,7 @@ export async function upsertProjectAction(data: {
     repoUrl: data.repoUrl,
     demoUrl: data.demoUrl,
     featured: data.featured,
+    thumbnail: data.thumbnail,
     pictures: data.images,
     videos: data.videoUrl ? [data.videoUrl] : [],
     customVariables: data.customVars,
@@ -303,6 +309,7 @@ export async function upsertArticleAction(data: {
   publishedAt: string;
   body?: string;
   coverImage?: string;
+  thumbnail?: string;
   videoUrl?: string;
 }) {
   await requireAuth();
@@ -313,6 +320,7 @@ export async function upsertArticleAction(data: {
     groupSlug: data.groupSlug,
     publishedAt: data.publishedAt,
     content: data.body ?? "",
+    thumbnail: data.thumbnail || data.coverImage,
     pictures: data.coverImage ? [data.coverImage] : [],
     videos: data.videoUrl ? [data.videoUrl] : [],
   });

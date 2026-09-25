@@ -26,6 +26,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       slug: body.slug || originalSlug,
       groupSlug: body.groupSlug || "engineering-notes",
       publishedAt: body.publishedAt || new Date().toISOString().split("T")[0],
+      thumbnail: typeof body.thumbnail === "string" ? body.thumbnail : undefined,
       content: body.content || "",
       pictures: Array.isArray(body.pictures) ? body.pictures : [],
       videos: Array.isArray(body.videos) ? body.videos : [],

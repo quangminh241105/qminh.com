@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import SectionTitle from "@/components/SectionTitle";
 import { getPortfolioContent } from "@/lib/portfolio-db";
 import { getProjectSlug } from "@/lib/project-slug";
 import { ArrowLeftIcon, ExternalLinkIcon, GitHubIcon, ImageIcon, VideoIcon, SlidersIcon } from "@/components/icons";
@@ -60,6 +59,13 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         <p className="mt-4 border-l-4 border-blue-600 pl-4 font-mono text-sm sm:text-base text-zinc-600 dark:border-blue-400 dark:text-zinc-400">
           {project.summary}
         </p>
+
+        {project.thumbnail ? (
+          <div className="mt-8 overflow-hidden border-2 border-black bg-zinc-100 dark:border-blue-400 dark:bg-zinc-950">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={project.thumbnail} alt={`${project.title} thumbnail`} className="max-h-[30rem] w-full object-cover" />
+          </div>
+        ) : null}
 
         <div className="mt-8 flex flex-wrap gap-3">
           {project.demoUrl ? (

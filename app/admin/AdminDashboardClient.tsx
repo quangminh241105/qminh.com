@@ -68,6 +68,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     profession: portfolio.profession,
     tagline: portfolio.tagline,
     location: portfolio.location,
+    avatar: portfolio.avatar || "",
     quickSummary: portfolio.quickSummary.join("\n"),
     intro: portfolio.about.intro,
     background: portfolio.about.background,
@@ -83,6 +84,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         profession: profileForm.profession,
         tagline: profileForm.tagline,
         location: profileForm.location,
+        avatar: profileForm.avatar,
         quickSummary: profileForm.quickSummary.split("\n").map((s) => s.trim()).filter(Boolean),
         about: {
           intro: profileForm.intro,
@@ -111,6 +113,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     repoUrl: string;
     demoUrl: string;
     featured: boolean;
+    thumbnail: string;
     pictures: string[];
     videos: string[];
     customVariables: { key: string; value: string }[];
@@ -125,6 +128,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       repoUrl: "https://github.com/",
       demoUrl: "https://example.com",
       featured: false,
+      thumbnail: "",
       pictures: [],
       videos: [],
       customVariables: [{ key: "Role", value: "Developer" }],
@@ -152,6 +156,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         repoUrl: editingProject.repoUrl,
         demoUrl: editingProject.demoUrl,
         featured: editingProject.featured,
+        thumbnail: editingProject.thumbnail,
         pictures: editingProject.pictures,
         videos: editingProject.videos,
         customVariables: customVarsObj,
@@ -195,6 +200,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     groupSlug: string;
     excerpt: string;
     publishedAt: string;
+    thumbnail: string;
     content: string;
     pictures: string[];
     videos: string[];
@@ -207,6 +213,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       groupSlug: portfolio.articleGroups[0]?.slug ?? "",
       excerpt: "",
       publishedAt: new Date().toISOString().split("T")[0],
+      thumbnail: "",
       content: "Write your blog post here...",
       pictures: [],
       videos: [],
@@ -225,6 +232,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         groupSlug: editingArticle.groupSlug,
         excerpt: editingArticle.excerpt,
         publishedAt: editingArticle.publishedAt,
+        thumbnail: editingArticle.thumbnail,
         content: editingArticle.content,
         pictures: editingArticle.pictures,
         videos: editingArticle.videos,
@@ -582,6 +590,16 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     className="border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] dark:border-zinc-700 dark:bg-zinc-900 flex flex-col justify-between"
                   >
                     <div>
+                      {(project.thumbnail || project.pictures?.[0]) && (
+                        <div className="mb-4 overflow-hidden border-2 border-black bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={project.thumbnail || project.pictures[0]}
+                            alt={`${project.title} thumbnail`}
+                            className="h-28 w-full object-cover"
+                          />
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
                         <span className="border border-black bg-zinc-100 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-black dark:bg-zinc-800 dark:text-zinc-200">
                           {project.primaryTechnology}
@@ -621,6 +639,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             repoUrl: project.repoUrl,
                             demoUrl: project.demoUrl,
                             featured: project.featured,
+                            thumbnail: project.thumbnail || project.pictures?.[0] || "",
                             pictures: project.pictures || [],
                             videos: project.videos || [],
                             customVariables: cvList.length > 0 ? cvList : [{ key: "Role", value: "Developer" }],
@@ -733,6 +752,55 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     />
                     <span>Featured on Home Page</span>
                   </label>
+                </div>
+
+                {/* Project Thumbnail */}
+                <div className="md:col-span-2 border-2 border-black p-4 bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-700">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <label className="font-mono text-xs font-black uppercase text-black dark:text-[#ffe600] flex items-center gap-1.5">
+                      <ImageIcon className="h-4 w-4" />
+                      <span>Project Thumbnail</span>
+                    </label>
+                    <label className="border-2 border-black bg-white px-2.5 py-1 font-mono text-[11px] font-bold uppercase cursor-pointer hover:bg-[#ffe600] shadow-[2px_2px_0px_#000000]">
+                      <span>Upload Thumbnail</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = await handleFileUpload(file);
+                            if (url) setEditingProject({ ...editingProject, thumbnail: url });
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <p className="mb-2 font-mono text-[11px] text-zinc-500">
+                    This image appears on project cards. Screenshots below remain available in the project gallery.
+                  </p>
+                  {editingProject.thumbnail && (
+                    <div className="relative mb-2 w-fit border-2 border-black bg-white p-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={editingProject.thumbnail} alt="Project thumbnail preview" className="h-28 w-48 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingProject({ ...editingProject, thumbnail: "" })}
+                        className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+                        aria-label="Remove project thumbnail"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    value={editingProject.thumbnail}
+                    onChange={(e) => setEditingProject({ ...editingProject, thumbnail: e.target.value })}
+                    placeholder="Paste thumbnail URL or /uploads/project-thumbnail.png"
+                    className="w-full border border-black p-1.5 font-mono text-xs dark:bg-zinc-900"
+                  />
                 </div>
 
                 {/* Picture Uploads */}
@@ -965,6 +1033,16 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     className="border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] dark:border-zinc-700 dark:bg-zinc-900 flex flex-col justify-between"
                   >
                     <div>
+                      {(article.thumbnail || article.pictures?.[0]) && (
+                        <div className="mb-4 overflow-hidden border-2 border-black bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={article.thumbnail || article.pictures[0]}
+                            alt={`${article.title} thumbnail`}
+                            className="h-28 w-full object-cover"
+                          />
+                        </div>
+                      )}
                       <span className="border border-black bg-[#ffe600] px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-black">
                         {article.publishedAt}
                       </span>
@@ -987,6 +1065,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             groupSlug: article.groupSlug,
                             excerpt: article.excerpt,
                             publishedAt: article.publishedAt,
+                            thumbnail: article.thumbnail || article.pictures?.[0] || "",
                             content: article.content || "",
                             pictures: article.pictures || [],
                             videos: article.videos || [],
@@ -1106,6 +1185,55 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     value={editingArticle.excerpt}
                     onChange={(e) => setEditingArticle({ ...editingArticle, excerpt: e.target.value })}
                     className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white"
+                  />
+                </div>
+
+                {/* Article Thumbnail */}
+                <div className="md:col-span-2 border-2 border-black p-4 bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-700">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <label className="font-mono text-xs font-black uppercase text-black dark:text-[#ffe600] flex items-center gap-1.5">
+                      <ImageIcon className="h-4 w-4" />
+                      <span>Blog Thumbnail</span>
+                    </label>
+                    <label className="border-2 border-black bg-white px-2.5 py-1 font-mono text-[11px] font-bold uppercase cursor-pointer hover:bg-[#ffe600] shadow-[2px_2px_0px_#000000]">
+                      <span>Upload Thumbnail</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = await handleFileUpload(file);
+                            if (url) setEditingArticle({ ...editingArticle, thumbnail: url });
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <p className="mb-2 font-mono text-[11px] text-zinc-500">
+                    This image becomes the cover shown in the blog archive and featured article cards.
+                  </p>
+                  {editingArticle.thumbnail && (
+                    <div className="relative mb-2 w-fit border-2 border-black bg-white p-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={editingArticle.thumbnail} alt="Blog thumbnail preview" className="h-28 w-48 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingArticle({ ...editingArticle, thumbnail: "" })}
+                        className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+                        aria-label="Remove blog thumbnail"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    value={editingArticle.thumbnail}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, thumbnail: e.target.value })}
+                    placeholder="Paste thumbnail URL or /uploads/blog-thumbnail.png"
+                    className="w-full border border-black p-1.5 font-mono text-xs dark:bg-zinc-900"
                   />
                 </div>
 
@@ -1370,6 +1498,56 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                 value={profileForm.interests}
                 onChange={(e) => setProfileForm({ ...profileForm, interests: e.target.value })}
                 className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white"
+              />
+            </div>
+
+            <div className="md:col-span-2 border-2 border-black bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <label className="flex items-center gap-1.5 font-mono text-xs font-black uppercase text-black dark:text-[#ffe600]">
+                    <UserIcon className="h-4 w-4" />
+                    Profile Avatar
+                  </label>
+                  <p className="mt-1 font-mono text-[11px] text-zinc-500">
+                    Shown on the public About page and stored separately from project/blog media.
+                  </p>
+                </div>
+                <label className="cursor-pointer border-2 border-black bg-white px-2.5 py-1 font-mono text-[11px] font-bold uppercase shadow-[2px_2px_0px_#000000] hover:bg-[#ffe600]">
+                  Upload Avatar
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const url = await handleFileUpload(file);
+                        if (url) setProfileForm({ ...profileForm, avatar: url });
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              {profileForm.avatar && (
+                <div className="relative mt-3 w-fit border-2 border-black bg-white p-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={profileForm.avatar} alt="Profile avatar preview" className="h-28 w-28 rounded-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setProfileForm({ ...profileForm, avatar: "" })}
+                    className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+                    aria-label="Remove profile avatar"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              <input
+                value={profileForm.avatar}
+                onChange={(e) => setProfileForm({ ...profileForm, avatar: e.target.value })}
+                placeholder="Paste avatar URL or /uploads/avatar.png"
+                className="mt-3 w-full border border-black bg-white p-1.5 font-mono text-xs dark:bg-zinc-900 dark:text-white"
               />
             </div>
 

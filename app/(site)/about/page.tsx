@@ -19,6 +19,21 @@ export default async function AboutPage() {
         description={portfolio.about.intro}
       />
 
+      {portfolio.avatar ? (
+        <section className="mt-8 flex items-center gap-4 border-2 border-black bg-white p-4 shadow-[4px_4px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#000000]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={portfolio.avatar}
+            alt={`${portfolio.name} avatar`}
+            className="h-20 w-20 rounded-full border-2 border-black object-cover dark:border-blue-400"
+          />
+          <div>
+            <p className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">Profile avatar</p>
+            <p className="mt-1 font-mono text-sm font-black uppercase text-black dark:text-white">{portfolio.name}</p>
+          </div>
+        </section>
+      ) : null}
+
       <section className="mt-10 grid gap-6 md:grid-cols-2">
         {/* Background Box */}
         <div className="border-2 border-black bg-white p-6 sm:p-8 shadow-[5px_5px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[5px_5px_0px_#000000]">
