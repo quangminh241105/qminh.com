@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import F1Player from "@/components/F1Player";
 
 export const metadata: Metadata = {
   title: "F1 Stream | Quang Minh",
@@ -10,7 +11,7 @@ const STREAM_URL = "https://westreamf1.st/westreamf1.php";
 
 export default function F1Page() {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+    <main className="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
       <div className="border-2 border-black bg-white p-5 shadow-[6px_6px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[6px_6px_0px_#000000] sm:p-8">
         <div className="flex flex-col gap-5 border-b-2 border-black pb-6 dark:border-zinc-700 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -36,22 +37,7 @@ export default function F1Page() {
           </Link>
         </div>
 
-        <div className="mt-6 overflow-hidden border-2 border-black bg-black shadow-[4px_4px_0px_#000000] dark:border-zinc-600">
-          <iframe
-            src={STREAM_URL}
-            title="Formula 1 live stream"
-            loading="lazy"
-            name="frame"
-            scrolling="no"
-            frameBorder="0"
-            allow="fullscreen"
-            className="block h-[450px] w-full border-0"
-          />
-        </div>
-
-        <p className="mt-4 font-mono text-[11px] uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          Stream provided by the embedded broadcast source.
-        </p>
+        <F1Player src={STREAM_URL} />
       </div>
     </main>
   );
