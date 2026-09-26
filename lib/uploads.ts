@@ -3,18 +3,37 @@ import path from "node:path";
 
 export const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
-// Only ever matches filenames this app itself generates (see the upload
-// route's randomUUID()-based naming) - anything else (external URLs, hand
-// -typed paths) is left alone rather than risking deleting the wrong file.
-const UPLOAD_URL_PATTERN = /^\/uploads\/([a-zA-Z0-9-]+\.[a-zA-Z0-9]+)$/;
+function resolveUploadedFile(url: string) {
+  try {
+    const pathname = new URL(url, "http://local-upload-host").pathname;
+    if (!pathname.startsWith("/uploads/")) return null;
+
+    const segments = pathname
+      .slice("/uploads/".length)
+      .split("/")
+      .map((segment) => decodeURIComponent(segment));
+    if (
+      segments.length === 0 ||
+      segments.some((segment) => !segment || segment === "." || segment === ".." || segment.includes("/") || segment.includes("\\") || segment.includes("\0"))
+    ) {
+      return null;
+    }
+
+    const root = path.resolve(UPLOAD_DIR);
+    const candidate = path.resolve(root, ...segments);
+    return candidate.startsWith(`${root}${path.sep}`) ? candidate : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function deleteUploadedFile(url: string | undefined | null): Promise<void> {
   if (!url) return;
-  const match = url.match(UPLOAD_URL_PATTERN);
-  if (!match) return;
+  const filePath = resolveUploadedFile(url);
+  if (!filePath) return;
 
   try {
-    await unlink(path.join(UPLOAD_DIR, match[1]));
+    await unlink(filePath);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     if (code !== "ENOENT") {

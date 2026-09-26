@@ -422,12 +422,17 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
 
-  const handleFileUpload = async (file: File, folder = "media"): Promise<string | null> => {
+  const handleFileUpload = async (
+    file: File,
+    folder = "media",
+    kind: "image" | "video" | "media" | "resume" = "media",
+  ): Promise<string | null> => {
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", folder);
+      formData.append("kind", kind);
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -778,7 +783,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                       <span>Upload Thumbnail</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -786,6 +791,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             const url = await handleFileUpload(
                               file,
                               `projects/${uploadSlug(editingProject.title)}/thumbnail`,
+                              "image",
                             );
                             if (url) setEditingProject({ ...editingProject, thumbnail: url });
                           }
@@ -830,7 +836,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                       <span>Upload Local Image</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -838,6 +844,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             const url = await handleFileUpload(
                               file,
                               `projects/${uploadSlug(editingProject.title)}/screenshots`,
+                              "image",
                             );
                             if (url) {
                               setEditingProject({
@@ -1218,7 +1225,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                       <span>Upload Thumbnail</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -1226,6 +1233,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             const url = await handleFileUpload(
                               file,
                               `blogs/${uploadSlug(editingArticle.groupSlug, "uncategorized")}/${uploadSlug(editingArticle.slug || editingArticle.title)}/thumbnail`,
+                              "image",
                             );
                             if (url) setEditingArticle({ ...editingArticle, thumbnail: url });
                           }
@@ -1269,7 +1277,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                       <span>Attach Image</span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -1277,6 +1285,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             const url = await handleFileUpload(
                               file,
                               `blogs/${uploadSlug(editingArticle.groupSlug, "uncategorized")}/${uploadSlug(editingArticle.slug || editingArticle.title)}/content`,
+                              "image",
                             );
                             if (url) {
                               setEditingArticle({
@@ -1438,14 +1447,15 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                       Upload Cover
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
                             const url = await handleFileUpload(
                               file,
-                              `blogs/groups/${uploadSlug(editingGroup.slug || editingGroup.name, "untitled")}`,
+                              `blogs/groups/${uploadSlug(editingGroup.slug || editingGroup.name, "untitled")}/cover`,
+                              "image",
                             );
                             if (url) setEditingGroup({ ...editingGroup, coverImage: url });
                           }
@@ -1579,12 +1589,12 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                   Upload Avatar
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const url = await handleFileUpload(file, "profile/avatar");
+                        const url = await handleFileUpload(file, "profile/avatar", "image");
                         if (url) setProfileForm({ ...profileForm, avatar: url });
                       }
                       e.target.value = "";
@@ -1934,17 +1944,19 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                 {uploading ? "Uploading file..." : "Click or Drag File to Upload"}
               </span>
               <span className="mt-1 font-mono text-xs text-zinc-500">
-                Supports JPG, PNG, WEBP, GIF, MP4, WEBM (Max 50MB)
+                Supports JPG, PNG, WEBP, GIF, MP4, WEBM, OGV, MOV (max 15MB for images, 50MB for videos)
               </span>
               <input
                 type="file"
                 disabled={uploading}
+                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/ogg,video/quicktime"
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    await handleFileUpload(file);
+                    await handleFileUpload(file, "media", file.type.startsWith("image/") ? "image" : "video");
                   }
+                  e.target.value = "";
                 }}
               />
             </label>

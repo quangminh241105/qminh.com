@@ -109,7 +109,9 @@ A secure admin UI is available at `/admin`.
 
 From `/admin`, open the `Resume` tab and use the `Public CV` upload area. The upload is protected by the existing admin session and accepts only `.doc`, `.docx`, and `.pdf` files up to 10MB. The file signature, extension, and MIME type are checked before it is stored. Uploading a replacement updates the public download links and removes the previous managed CV file.
 
-Uploaded CVs and other media are stored in `public/uploads`. In deployment, keep `UPLOADS_HOST_PATH` pointed at persistent storage so CVs survive redeploys.
+Uploaded CVs and other media are stored in `public/uploads` and served through the runtime upload route, so files created after the Docker build remain accessible. In deployment, keep `UPLOADS_HOST_PATH` pointed at persistent storage so uploads survive redeploys.
+
+Admin uploads are validated by purpose: JPG/JPEG, PNG, WEBP, and GIF images are limited to 15MB; MP4, WEBM, OGV, and MOV videos are limited to 50MB; and DOC, DOCX, and PDF CV files are limited to 10MB. MIME type, extension, and file signature must agree. New files are renamed with a predictable timestamped name and grouped into folders such as `projects/<slug>/thumbnail`, `blogs/<group>/<slug>/content`, and `profile/avatar`.
 
 ## Project Structure
 
