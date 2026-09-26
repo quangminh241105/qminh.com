@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPortfolioContent } from "@/lib/portfolio-db";
 import { getProjectSlug } from "@/lib/project-slug";
+import ContentSections from "@/components/ContentSections";
 import { ArrowLeftIcon, ExternalLinkIcon, GitHubIcon, ImageIcon, VideoIcon, SlidersIcon } from "@/components/icons";
 
 type PageProps = {
@@ -29,6 +30,8 @@ export default async function ProjectDetailPage({ params }: PageProps) {
   }
 
   const customVarEntries = Object.entries(project.customVariables ?? {});
+  const beforeSections = project.sections.filter((section) => section.placement === "before-content");
+  const afterSections = project.sections.filter((section) => section.placement === "after-content");
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -93,6 +96,12 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           ) : null}
         </div>
       </section>
+
+      {beforeSections.length > 0 ? (
+        <div className="mt-10">
+          <ContentSections sections={beforeSections} />
+        </div>
+      ) : null}
 
       {/* Pictures Gallery */}
       {project.pictures && project.pictures.length > 0 && (
@@ -192,6 +201,12 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           </div>
         </aside>
       </div>
+
+      {afterSections.length > 0 ? (
+        <div className="mt-10">
+          <ContentSections sections={afterSections} />
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -10,6 +10,20 @@ export type SocialLink = {
 
 export type ContentLayout = "standard" | "spotlight" | "minimal";
 
+export type ContentSectionLayout = "full" | "image-top" | "image-left" | "image-right" | "quote" | "callout";
+export type ContentSectionPlacement = "before-content" | "after-content";
+
+export type ContentSection = {
+  id: string;
+  heading: string;
+  body: string;
+  image?: string;
+  imageAlt?: string;
+  layout: ContentSectionLayout;
+  placement: ContentSectionPlacement;
+  order?: number;
+};
+
 export type ResumeFile = {
   url: string;
   name: string;
@@ -45,6 +59,7 @@ export class Project {
   public readonly videoUrl: string | undefined;
   public readonly customVars: Record<string, string>;
   public readonly layout: ContentLayout;
+  public readonly sections: ContentSection[];
 
   constructor(
     public readonly title: string,
@@ -60,6 +75,7 @@ export class Project {
     public readonly order?: number,
     thumbnail?: string,
     layout: ContentLayout = "standard",
+    sections: ContentSection[] = [],
   ) {
     this.id = title;
     this.images = pictures;
@@ -67,6 +83,7 @@ export class Project {
     this.videoUrl = videos[0];
     this.customVars = customVariables;
     this.layout = layout;
+    this.sections = sections;
   }
 
   get primaryTechnology(): string {
@@ -92,6 +109,7 @@ export class Article {
   public readonly videoUrl: string | undefined;
   public readonly featured: boolean;
   public readonly layout: ContentLayout;
+  public readonly sections: ContentSection[];
 
   constructor(
     public readonly title: string,
@@ -106,6 +124,7 @@ export class Article {
     thumbnail?: string,
     featured = false,
     layout: ContentLayout = "standard",
+    sections: ContentSection[] = [],
   ) {
     this.id = slug;
     this.body = content;
@@ -114,6 +133,7 @@ export class Article {
     this.videoUrl = videos[0];
     this.featured = featured;
     this.layout = layout;
+    this.sections = sections;
   }
 }
 

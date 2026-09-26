@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { marked } from "marked";
 import SectionTitle from "@/components/SectionTitle";
+import ContentSections from "@/components/ContentSections";
 import { getPortfolioContent } from "@/lib/portfolio-db";
 import type { Metadata } from "next";
 
@@ -32,6 +33,8 @@ export default async function ArticleDetailPage({ params }: PageProps) {
 
   const coverImage = article.thumbnail || article.pictures[0];
   const bodyHtml = marked.parse(article.content?.trim() || article.excerpt, { async: false }) as string;
+  const beforeSections = article.sections.filter((section) => section.placement === "before-content");
+  const afterSections = article.sections.filter((section) => section.placement === "after-content");
 
   return (
     <main>
@@ -71,10 +74,14 @@ export default async function ArticleDetailPage({ params }: PageProps) {
           </div>
         ) : null}
 
+        {beforeSections.length > 0 ? <ContentSections sections={beforeSections} /> : null}
+
         <article
           className="prose prose-slate max-w-none dark:prose-invert prose-a:text-blue-700 dark:prose-a:text-blue-300"
           dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
+
+        {afterSections.length > 0 ? <div className="mt-10"><ContentSections sections={afterSections} /></div> : null}
       </section>
     </main>
   );

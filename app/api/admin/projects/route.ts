@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       demoUrl: body.demoUrl || "",
       featured: Boolean(body.featured),
       layout: body.layout,
+      sections: Array.isArray(body.sections) ? body.sections : [],
       thumbnail: typeof body.thumbnail === "string" ? body.thumbnail : undefined,
       pictures: Array.isArray(body.pictures) ? body.pictures : [],
       videos: Array.isArray(body.videos) ? body.videos : [],

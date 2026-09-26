@@ -13,6 +13,9 @@ import {
   type ResumeFile,
   type SocialLink,
   type ContentLayout,
+  type ContentSection,
+  type ContentSectionLayout,
+  type ContentSectionPlacement,
   type GalleryImage,
 } from "@/lib/portfolio";
 import type { Db } from "mongodb";
@@ -39,6 +42,36 @@ function normalizeStringArray(value: unknown, fallback: string[]): string[] {
 
 function normalizeContentLayout(value: unknown): ContentLayout {
   return value === "spotlight" || value === "minimal" ? value : "standard";
+}
+
+function normalizeSectionLayout(value: unknown): ContentSectionLayout {
+  return value === "image-top" || value === "image-left" || value === "image-right" || value === "quote" || value === "callout"
+    ? value
+    : "full";
+}
+
+function normalizeSectionPlacement(value: unknown): ContentSectionPlacement {
+  return value === "after-content" ? value : "before-content";
+}
+
+function normalizeContentSections(value: unknown): ContentSection[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item, index) => {
+    if (!isRecord(item)) return [];
+    const body = typeof item.body === "string" ? item.body : "";
+    const image = typeof item.image === "string" && item.image.trim() ? item.image.trim() : undefined;
+    return [{
+      id: typeof item.id === "string" && item.id.trim() ? item.id.trim() : `section-${index + 1}`,
+      heading: typeof item.heading === "string" ? item.heading.trim() : "",
+      body,
+      image,
+      imageAlt: typeof item.imageAlt === "string" ? item.imageAlt.trim() : "",
+      layout: normalizeSectionLayout(item.layout),
+      placement: normalizeSectionPlacement(item.placement),
+      order: index,
+    }];
+  });
 }
 
 function normalizeGalleryImages(value: unknown): GalleryImage[] {
@@ -235,6 +268,7 @@ async function ensureBootstrapped(db: Db) {
           demoUrl: p.demoUrl,
           featured: p.featured,
           layout: p.layout || "standard",
+          sections: p.sections || [],
           thumbnail: p.thumbnail || p.pictures[0] || "",
           pictures: p.pictures,
           videos: p.videos,
@@ -298,6 +332,7 @@ async function ensureBootstrapped(db: Db) {
           publishedAt: a.publishedAt,
           featured: a.featured,
           layout: a.layout,
+          sections: a.sections || [],
           thumbnail: a.thumbnail || a.pictures[0] || "",
           content: a.content,
           pictures: a.pictures,
@@ -383,6 +418,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
         demoUrl: p.demoUrl || "",
         featured: Boolean(p.featured),
         layout: normalizeContentLayout(p.layout),
+        sections: normalizeContentSections(p.sections),
         thumbnail,
         pictures,
         videos,
@@ -420,6 +456,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
         publishedAt: a.publishedAt,
         featured: Boolean(a.featured),
         layout: normalizeContentLayout(a.layout),
+        sections: normalizeContentSections(a.sections),
         content,
         pictures,
         videos: Array.isArray(a.videos) ? a.videos : [],
@@ -575,6 +612,7 @@ export async function upsertProject(project: {
   demoUrl: string;
   featured: boolean;
   layout?: ContentLayout;
+  sections?: ContentSection[];
   thumbnail?: string;
   pictures?: string[];
   videos?: string[];
@@ -603,6 +641,7 @@ export async function upsertProject(project: {
           demoUrl: project.demoUrl,
           featured: project.featured,
           layout: normalizeContentLayout(project.layout),
+          sections: normalizeContentSections(project.sections),
           thumbnail: project.thumbnail?.trim() || project.pictures?.[0] || "",
           pictures: project.pictures || [],
           videos: project.videos || [],
@@ -728,6 +767,7 @@ export async function upsertArticle(article: {
   publishedAt: string;
   featured?: boolean;
   layout?: ContentLayout;
+  sections?: ContentSection[];
   thumbnail?: string;
   content: string;
   pictures?: string[];
@@ -755,6 +795,7 @@ export async function upsertArticle(article: {
           publishedAt: article.publishedAt,
           featured: Boolean(article.featured),
           layout: normalizeContentLayout(article.layout),
+          sections: normalizeContentSections(article.sections),
           content: article.content,
           thumbnail: article.thumbnail?.trim() || article.pictures?.[0] || "",
           pictures: article.pictures || [],

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { BookOpenIcon, CalendarIcon, ArrowRightIcon } from "@/components/icons";
-import type { ContentLayout } from "@/lib/portfolio";
+import type { ContentLayout, ContentSection } from "@/lib/portfolio";
 
 export type BlogArticleCardData = {
   title: string;
@@ -16,6 +16,7 @@ export type BlogArticleCardData = {
   pictures: string[];
   featured?: boolean;
   layout?: ContentLayout;
+  sections?: ContentSection[];
 };
 
 type BlogArticleCardProps = {

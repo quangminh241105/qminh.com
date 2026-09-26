@@ -3,7 +3,8 @@
 import { useState } from "react";
 import BlogArticleCard, { type BlogArticleCardData } from "@/components/BlogArticleCard";
 import ProjectCard from "@/components/ProjectCard";
-import type { ContentLayout, Project } from "@/lib/portfolio";
+import ContentSections from "@/components/ContentSections";
+import type { ContentLayout, ContentSection, Project } from "@/lib/portfolio";
 
 type PreviewMode = "card" | "detail";
 
@@ -20,6 +21,7 @@ export type ProjectPreviewDraft = {
   customVariables: Record<string, string>;
   content: string;
   layout: ContentLayout;
+  sections: ContentSection[];
 };
 
 export type ArticlePreviewDraft = {
@@ -33,6 +35,7 @@ export type ArticlePreviewDraft = {
   pictures: string[];
   featured: boolean;
   layout: ContentLayout;
+  sections: ContentSection[];
 };
 
 type AdminLivePreviewProps =
@@ -69,7 +72,7 @@ function PreviewShell({ mode, setMode, children }: { mode: PreviewMode; setMode:
   );
 }
 
-function DetailPreview({ title, eyebrow, description, image, content, meta }: { title: string; eyebrow: string; description: string; image?: string; content: string; meta: string }) {
+function DetailPreview({ title, eyebrow, description, image, content, sections, meta }: { title: string; eyebrow: string; description: string; image?: string; content: string; sections: ContentSection[]; meta: string }) {
   return (
     <div className="border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] dark:border-zinc-600 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff]">
       <p className="font-mono text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">{eyebrow}</p>
@@ -85,6 +88,14 @@ function DetailPreview({ title, eyebrow, description, image, content, meta }: { 
       <div className="mt-5 max-h-44 overflow-hidden border-2 border-black bg-zinc-50 p-3 font-mono text-xs leading-6 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
         {content.trim() || "Your full content will appear here."}
       </div>
+      {sections.length > 0 ? (
+        <div className="mt-5 border-t-2 border-black pt-5 dark:border-zinc-700">
+          <p className="mb-3 font-mono text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">
+            {sections.length} custom section{sections.length === 1 ? "" : "s"} in the live detail
+          </p>
+          <ContentSections sections={sections} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -128,6 +139,7 @@ export default function AdminLivePreview(props: AdminLivePreviewProps) {
             description={draft.summary}
             image={draft.thumbnail || draft.pictures[0]}
             content={draft.content}
+            sections={draft.sections}
             meta={`${draft.featured ? "Pinned on home" : "Standard listing"} · ${draft.layout} layout`}
           />
         )}
@@ -148,6 +160,7 @@ export default function AdminLivePreview(props: AdminLivePreviewProps) {
     pictures: draft.pictures,
     featured: draft.featured,
     layout: draft.layout,
+    sections: draft.sections,
   };
 
   return (
@@ -163,6 +176,7 @@ export default function AdminLivePreview(props: AdminLivePreviewProps) {
           description={draft.excerpt}
           image={draft.thumbnail || draft.pictures[0]}
           content={draft.content}
+          sections={draft.sections}
           meta={`${draft.featured ? "Pinned article" : "Standard article"} · ${draft.layout} layout · ${draft.publishedAt}`}
         />
       )}

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { type PortfolioContent } from "@/lib/portfolio-db";
-import type { ContentLayout, GalleryImage } from "@/lib/portfolio";
+import type { ContentLayout, ContentSection, GalleryImage } from "@/lib/portfolio";
 import AdminLivePreview from "@/components/AdminLivePreview";
+import AdminSectionBuilder from "@/components/AdminSectionBuilder";
 import {
   logoutAdminAction,
   updateProfileServerAction,
@@ -130,6 +131,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     demoUrl: string;
     featured: boolean;
     layout: ContentLayout;
+    sections: ContentSection[];
     thumbnail: string;
     pictures: string[];
     videos: string[];
@@ -146,6 +148,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       demoUrl: "https://example.com",
       featured: false,
       layout: "standard",
+      sections: [],
       thumbnail: "",
       pictures: [],
       videos: [],
@@ -175,6 +178,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         demoUrl: editingProject.demoUrl,
         featured: editingProject.featured,
         layout: editingProject.layout,
+        sections: editingProject.sections,
         thumbnail: editingProject.thumbnail,
         pictures: editingProject.pictures,
         videos: editingProject.videos,
@@ -221,6 +225,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     publishedAt: string;
     featured: boolean;
     layout: ContentLayout;
+    sections: ContentSection[];
     thumbnail: string;
     content: string;
     pictures: string[];
@@ -236,6 +241,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       publishedAt: new Date().toISOString().split("T")[0],
       featured: false,
       layout: "standard",
+      sections: [],
       thumbnail: "",
       content: "Write your blog post here...",
       pictures: [],
@@ -257,6 +263,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         publishedAt: editingArticle.publishedAt,
         featured: editingArticle.featured,
         layout: editingArticle.layout,
+        sections: editingArticle.sections,
         thumbnail: editingArticle.thumbnail,
         content: editingArticle.content,
         pictures: editingArticle.pictures,
@@ -527,17 +534,11 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       <div className="flex flex-col gap-4 border-2 border-black bg-white p-6 shadow-[5px_5px_0px_#000000] dark:border-[#ffe600] dark:bg-zinc-900 dark:shadow-[5px_5px_0px_#000000] sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 bg-[#ffe600] border border-black" />
+            <span className={`h-3 w-3 border border-black ${dbHealth.ok ? "bg-green-500" : "bg-red-500"}`} aria-label={dbHealth.ok ? "Database connected" : "Database disconnected"} />
             <h1 className="font-mono text-xl font-black uppercase tracking-wider text-black dark:text-[#ffe600]">
               Admin Control Center
             </h1>
           </div>
-          <p className="mt-1 font-mono text-xs text-zinc-600 dark:text-zinc-400">
-            Database: <span className="font-bold text-black dark:text-white">{dbHealth.database}</span> • Status:{" "}
-            <span className={`font-bold ${dbHealth.ok ? "text-green-600 dark:text-green-400" : "text-amber-600"}`}>
-              {dbHealth.ok ? "CONNECTED (Docker MongoDB)" : "FALLBACK STATIC"}
-            </span>
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -728,6 +729,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             demoUrl: project.demoUrl,
                             featured: project.featured,
                             layout: project.layout || "standard",
+                            sections: project.sections || [],
                             thumbnail: project.thumbnail || project.pictures?.[0] || "",
                             pictures: project.pictures || [],
                             videos: project.videos || [],
@@ -1098,6 +1100,13 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                   />
                 </div>
 
+                <AdminSectionBuilder
+                  sections={editingProject.sections}
+                  onChange={(sections) => setEditingProject({ ...editingProject, sections })}
+                  uploadImage={(file, folder) => handleFileUpload(file, folder, "image")}
+                  uploadFolder={`projects/${uploadSlug(editingProject.title || "untitled")}/sections`}
+                />
+
                 <div className="md:col-span-2">
                   <AdminLivePreview
                     kind="project"
@@ -1109,6 +1118,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                       demoUrl: editingProject.demoUrl,
                       featured: editingProject.featured,
                       layout: editingProject.layout,
+                      sections: editingProject.sections,
                       thumbnail: editingProject.thumbnail,
                       pictures: editingProject.pictures,
                       videos: editingProject.videos,
@@ -1209,6 +1219,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             publishedAt: article.publishedAt,
                             featured: article.featured,
                             layout: article.layout || "standard",
+                            sections: article.sections || [],
                             thumbnail: article.thumbnail || article.pictures?.[0] || "",
                             content: article.content || "",
                             pictures: article.pictures || [],
@@ -1455,6 +1466,13 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                   />
                 </div>
 
+                <AdminSectionBuilder
+                  sections={editingArticle.sections}
+                  onChange={(sections) => setEditingArticle({ ...editingArticle, sections })}
+                  uploadImage={(file, folder) => handleFileUpload(file, folder, "image")}
+                  uploadFolder={`blogs/${uploadSlug(editingArticle.groupSlug, "uncategorized")}/${uploadSlug(editingArticle.slug || editingArticle.title)}/sections`}
+                />
+
                 <div className="md:col-span-2">
                   <AdminLivePreview
                     kind="article"
@@ -1469,6 +1487,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                       pictures: editingArticle.pictures,
                       featured: editingArticle.featured,
                       layout: editingArticle.layout,
+                      sections: editingArticle.sections,
                     }}
                   />
                 </div>

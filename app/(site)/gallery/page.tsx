@@ -16,7 +16,7 @@ export default async function GalleryPage() {
       <SectionTitle
         eyebrow="Gallery"
         title="Snapshots, experiments, and little wins"
-        description="A visual archive grouped like a personal Instagram feed: each collection has its own story, captions, and rhythm."
+        description="Explore selected moments, experiments, and visual notes from my work and creative process."
         tone="neutral"
       />
 

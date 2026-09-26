@@ -28,6 +28,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       publishedAt: body.publishedAt || new Date().toISOString().split("T")[0],
       featured: Boolean(body.featured),
       layout: body.layout,
+      sections: Array.isArray(body.sections) ? body.sections : [],
       thumbnail: typeof body.thumbnail === "string" ? body.thumbnail : undefined,
       content: body.content || "",
       pictures: Array.isArray(body.pictures) ? body.pictures : [],
