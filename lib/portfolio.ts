@@ -8,6 +8,8 @@ export type SocialLink = {
   href: string;
 };
 
+export type ContentLayout = "standard" | "spotlight" | "minimal";
+
 export type ResumeFile = {
   url: string;
   name: string;
@@ -35,6 +37,7 @@ export class Project {
   public readonly thumbnail: string | undefined;
   public readonly videoUrl: string | undefined;
   public readonly customVars: Record<string, string>;
+  public readonly layout: ContentLayout;
 
   constructor(
     public readonly title: string,
@@ -49,12 +52,14 @@ export class Project {
     public readonly content: string = "",
     public readonly order?: number,
     thumbnail?: string,
+    layout: ContentLayout = "standard",
   ) {
     this.id = title;
     this.images = pictures;
     this.thumbnail = thumbnail || pictures[0];
     this.videoUrl = videos[0];
     this.customVars = customVariables;
+    this.layout = layout;
   }
 
   get primaryTechnology(): string {
@@ -78,6 +83,8 @@ export class Article {
   public readonly thumbnail: string | undefined;
   public readonly coverImage: string | undefined;
   public readonly videoUrl: string | undefined;
+  public readonly featured: boolean;
+  public readonly layout: ContentLayout;
 
   constructor(
     public readonly title: string,
@@ -90,12 +97,16 @@ export class Article {
     public readonly videos: string[] = [],
     public readonly order?: number,
     thumbnail?: string,
+    featured = false,
+    layout: ContentLayout = "standard",
   ) {
     this.id = slug;
     this.body = content;
     this.thumbnail = thumbnail || pictures[0];
     this.coverImage = this.thumbnail;
     this.videoUrl = videos[0];
+    this.featured = featured;
+    this.layout = layout;
   }
 }
 

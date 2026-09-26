@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       repoUrl: body.repoUrl || "",
       demoUrl: body.demoUrl || "",
       featured: Boolean(body.featured),
+      layout: body.layout,
       thumbnail: typeof body.thumbnail === "string" ? body.thumbnail : undefined,
       pictures: Array.isArray(body.pictures) ? body.pictures : [],
       videos: Array.isArray(body.videos) ? body.videos : [],

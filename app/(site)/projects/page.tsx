@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 
 export default async function ProjectsPage() {
   const portfolio = await getPortfolioContent();
+  const projects = [...portfolio.projects].sort((a, b) => Number(b.featured) - Number(a.featured));
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
@@ -22,7 +23,7 @@ export default async function ProjectsPage() {
 
       <section className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <QminhFlowCard />
-        {portfolio.projects.map((project) => (
+        {projects.map((project) => (
           <ProjectCard key={project.title} project={project} />
         ))}
       </section>

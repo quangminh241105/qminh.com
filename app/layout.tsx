@@ -26,6 +26,10 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Quang Minh | IT Student Portfolio",
   description: "Portfolio website for Quang Minh, IT student and web developer.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

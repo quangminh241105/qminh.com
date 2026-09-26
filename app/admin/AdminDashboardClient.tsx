@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { type PortfolioContent } from "@/lib/portfolio-db";
+import type { ContentLayout } from "@/lib/portfolio";
+import AdminLivePreview from "@/components/AdminLivePreview";
 import {
   logoutAdminAction,
   updateProfileServerAction,
@@ -125,6 +127,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     repoUrl: string;
     demoUrl: string;
     featured: boolean;
+    layout: ContentLayout;
     thumbnail: string;
     pictures: string[];
     videos: string[];
@@ -140,6 +143,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       repoUrl: "https://github.com/",
       demoUrl: "https://example.com",
       featured: false,
+      layout: "standard",
       thumbnail: "",
       pictures: [],
       videos: [],
@@ -168,6 +172,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         repoUrl: editingProject.repoUrl,
         demoUrl: editingProject.demoUrl,
         featured: editingProject.featured,
+        layout: editingProject.layout,
         thumbnail: editingProject.thumbnail,
         pictures: editingProject.pictures,
         videos: editingProject.videos,
@@ -212,6 +217,8 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
     groupSlug: string;
     excerpt: string;
     publishedAt: string;
+    featured: boolean;
+    layout: ContentLayout;
     thumbnail: string;
     content: string;
     pictures: string[];
@@ -225,6 +232,8 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
       groupSlug: portfolio.articleGroups[0]?.slug ?? "",
       excerpt: "",
       publishedAt: new Date().toISOString().split("T")[0],
+      featured: false,
+      layout: "standard",
       thumbnail: "",
       content: "Write your blog post here...",
       pictures: [],
@@ -244,6 +253,8 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         groupSlug: editingArticle.groupSlug,
         excerpt: editingArticle.excerpt,
         publishedAt: editingArticle.publishedAt,
+        featured: editingArticle.featured,
+        layout: editingArticle.layout,
         thumbnail: editingArticle.thumbnail,
         content: editingArticle.content,
         pictures: editingArticle.pictures,
@@ -657,6 +668,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             repoUrl: project.repoUrl,
                             demoUrl: project.demoUrl,
                             featured: project.featured,
+                            layout: project.layout || "standard",
                             thumbnail: project.thumbnail || project.pictures?.[0] || "",
                             pictures: project.pictures || [],
                             videos: project.videos || [],
@@ -770,6 +782,21 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     />
                     <span>Featured on Home Page</span>
                   </label>
+                </div>
+
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">
+                    Public Card Layout
+                  </label>
+                  <select
+                    value={editingProject.layout}
+                    onChange={(e) => setEditingProject({ ...editingProject, layout: e.target.value as ContentLayout })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  >
+                    <option value="standard">Standard — balanced card</option>
+                    <option value="spotlight">Spotlight — larger visual</option>
+                    <option value="minimal">Minimal — compact card</option>
+                  </select>
                 </div>
 
                 {/* Project Thumbnail */}
@@ -1011,6 +1038,28 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     placeholder="Write detailed background, trade-offs, architecture decisions..."
                   />
                 </div>
+
+                <div className="md:col-span-2">
+                  <AdminLivePreview
+                    kind="project"
+                    draft={{
+                      title: editingProject.title,
+                      summary: editingProject.summary,
+                      technologies: editingProject.technologies.split(",").map((item) => item.trim()).filter(Boolean),
+                      repoUrl: editingProject.repoUrl,
+                      demoUrl: editingProject.demoUrl,
+                      featured: editingProject.featured,
+                      layout: editingProject.layout,
+                      thumbnail: editingProject.thumbnail,
+                      pictures: editingProject.pictures,
+                      videos: editingProject.videos,
+                      customVariables: Object.fromEntries(
+                        editingProject.customVariables.filter((item) => item.key.trim()).map((item) => [item.key, item.value]),
+                      ),
+                      content: editingProject.content,
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="mt-6 flex justify-end gap-3 border-t-2 border-black pt-4">
@@ -1069,9 +1118,17 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                           />
                         </div>
                       )}
-                      <span className="border border-black bg-[#ffe600] px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-black">
-                        {article.publishedAt}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="border border-black bg-[#ffe600] px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-black">
+                          {article.publishedAt}
+                        </span>
+                        {article.featured && (
+                          <span className="border border-black bg-red-500 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-white">
+                            Pinned
+                          </span>
+                        )}
+                        <span className="font-mono text-[10px] uppercase text-zinc-500">{article.layout || "standard"}</span>
+                      </div>
                       <h3 className="mt-2 font-mono text-base font-black uppercase text-black dark:text-white">
                         {article.title}
                       </h3>
@@ -1091,6 +1148,8 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                             groupSlug: article.groupSlug,
                             excerpt: article.excerpt,
                             publishedAt: article.publishedAt,
+                            featured: article.featured,
+                            layout: article.layout || "standard",
                             thumbnail: article.thumbnail || article.pictures?.[0] || "",
                             content: article.content || "",
                             pictures: article.pictures || [],
@@ -1214,6 +1273,33 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                   />
                 </div>
 
+                <div className="flex items-center gap-3">
+                  <label className="inline-flex items-center gap-2 cursor-pointer font-mono text-xs font-bold uppercase">
+                    <input
+                      type="checkbox"
+                      checked={editingArticle.featured}
+                      onChange={(e) => setEditingArticle({ ...editingArticle, featured: e.target.checked })}
+                      className="h-4 w-4 border-2 border-black accent-[#ffe600]"
+                    />
+                    <span>Pin / Feature in Blog</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">
+                    Public Card Layout
+                  </label>
+                  <select
+                    value={editingArticle.layout}
+                    onChange={(e) => setEditingArticle({ ...editingArticle, layout: e.target.value as ContentLayout })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  >
+                    <option value="standard">Standard — balanced card</option>
+                    <option value="spotlight">Spotlight — larger visual</option>
+                    <option value="minimal">Minimal — compact card</option>
+                  </select>
+                </div>
+
                 {/* Article Thumbnail */}
                 <div className="md:col-span-2 border-2 border-black p-4 bg-zinc-50 dark:bg-zinc-950 dark:border-zinc-700">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -1307,6 +1393,24 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                     value={editingArticle.content}
                     onChange={(e) => setEditingArticle({ ...editingArticle, content: e.target.value })}
                     className="w-full border-2 border-black bg-white p-3 font-mono text-sm dark:bg-zinc-950 dark:border-zinc-700 dark:text-white"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <AdminLivePreview
+                    kind="article"
+                    draft={{
+                      title: editingArticle.title,
+                      excerpt: editingArticle.excerpt,
+                      slug: editingArticle.slug,
+                      groupSlug: editingArticle.groupSlug,
+                      publishedAt: editingArticle.publishedAt,
+                      thumbnail: editingArticle.thumbnail,
+                      content: editingArticle.content,
+                      pictures: editingArticle.pictures,
+                      featured: editingArticle.featured,
+                      layout: editingArticle.layout,
+                    }}
                   />
                 </div>
               </div>

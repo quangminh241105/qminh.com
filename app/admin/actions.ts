@@ -23,7 +23,7 @@ import {
   upsertResumeItem,
   deleteResumeItem,
 } from "@/lib/portfolio-db";
-import type { ResumeFile } from "@/lib/portfolio";
+import type { ContentLayout, ResumeFile } from "@/lib/portfolio";
 
 export async function loginAdminAction(_prevState: unknown, formData: FormData) {
   const password = formData.get("password") as string;
@@ -90,6 +90,7 @@ export async function saveProjectServerAction(data: {
   repoUrl: string;
   demoUrl: string;
   featured: boolean;
+  layout?: ContentLayout;
   thumbnail?: string;
   pictures: string[];
   videos: string[];
@@ -129,6 +130,8 @@ export async function saveArticleServerAction(data: {
   slug: string;
   groupSlug?: string;
   publishedAt: string;
+  featured?: boolean;
+  layout?: ContentLayout;
   thumbnail?: string;
   content: string;
   pictures: string[];
@@ -273,6 +276,7 @@ export async function upsertProjectAction(data: {
   repoUrl: string;
   demoUrl: string;
   featured: boolean;
+  layout?: ContentLayout;
   thumbnail?: string;
   images?: string[];
   videoUrl?: string;
@@ -286,6 +290,7 @@ export async function upsertProjectAction(data: {
     repoUrl: data.repoUrl,
     demoUrl: data.demoUrl,
     featured: data.featured,
+    layout: data.layout,
     thumbnail: data.thumbnail,
     pictures: data.images,
     videos: data.videoUrl ? [data.videoUrl] : [],
@@ -307,6 +312,8 @@ export async function upsertArticleAction(data: {
   slug: string;
   groupSlug?: string;
   publishedAt: string;
+  featured?: boolean;
+  layout?: ContentLayout;
   body?: string;
   coverImage?: string;
   thumbnail?: string;
@@ -319,6 +326,8 @@ export async function upsertArticleAction(data: {
     slug: data.slug,
     groupSlug: data.groupSlug,
     publishedAt: data.publishedAt,
+    featured: data.featured,
+    layout: data.layout,
     content: data.body ?? "",
     thumbnail: data.thumbnail || data.coverImage,
     pictures: data.coverImage ? [data.coverImage] : [],

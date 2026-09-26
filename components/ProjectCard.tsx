@@ -18,6 +18,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const visibleTechnologies = project.technologies.slice(0, MAX_VISIBLE_TECHNOLOGIES);
   const hiddenCount = project.technologies.length - visibleTechnologies.length;
   const firstPicture = project.thumbnail || (project.pictures && project.pictures.length > 0 ? project.pictures[0] : null);
+  const layout = project.layout || "standard";
 
   function openProjectPage() {
     router.push(`/projects/${projectSlug}`);
@@ -34,10 +35,14 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           openProjectPage();
         }
       }}
-      className="group flex h-full cursor-pointer flex-col border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[7px_7px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff] dark:hover:shadow-[7px_7px_0px_#ffffff]"
+      className={`group flex h-full cursor-pointer flex-col border-2 border-black bg-white shadow-[4px_4px_0px_#000000] transition-all hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[7px_7px_0px_#000000] dark:border-blue-400 dark:bg-zinc-900 dark:shadow-[4px_4px_0px_#ffffff] dark:hover:shadow-[7px_7px_0px_#ffffff] ${
+        layout === "minimal" ? "p-3" : layout === "spotlight" ? "p-6" : "p-5"
+      }`}
     >
       {/* Visual Header: Thumbnail or Solid Geometric Block (Zero Gradient) */}
-      <div className="relative h-40 shrink-0 border-2 border-black bg-blue-600 overflow-hidden flex items-center justify-center dark:border-blue-400">
+      <div className={`relative shrink-0 border-2 border-black bg-blue-600 overflow-hidden flex items-center justify-center dark:border-blue-400 ${
+        layout === "minimal" ? "h-24" : layout === "spotlight" ? "h-56" : "h-40"
+      }`}>
         {firstPicture ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -67,10 +72,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </span>
       </div>
 
-      <h3 className="mt-3 overflow-hidden text-lg font-black uppercase text-black line-clamp-2 dark:text-white">
+      <h3 className={`${layout === "spotlight" ? "text-2xl" : "text-lg"} mt-3 overflow-hidden font-black uppercase text-black line-clamp-2 dark:text-white`}>
         {project.title}
       </h3>
-      <p className="mt-2 overflow-hidden text-sm leading-6 text-zinc-600 line-clamp-3 dark:text-zinc-400">
+      <p className={`${layout === "minimal" ? "line-clamp-2" : "line-clamp-3"} mt-2 overflow-hidden text-sm leading-6 text-zinc-600 dark:text-zinc-400`}>
         {project.summary}
       </p>
 

@@ -26,6 +26,8 @@ export default async function BlogPage({ searchParams }: PageProps) {
     content: article.content,
     thumbnail: article.thumbnail,
     pictures: article.pictures,
+    featured: article.featured,
+    layout: article.layout,
   }));
   const groups = portfolio.articleGroups.map((group) => ({ name: group.name, slug: group.slug }));
 

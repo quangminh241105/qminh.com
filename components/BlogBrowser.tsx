@@ -38,6 +38,7 @@ export default function BlogBrowser({ articles, groups, initialGroup = "all" }: 
     });
 
     return filtered.sort((a, b) => {
+      if (a.featured !== b.featured) return a.featured ? -1 : 1;
       if (sort === "title-az") return a.title.localeCompare(b.title);
       if (sort === "title-za") return b.title.localeCompare(a.title);
       const aTime = new Date(a.publishedAt).getTime() || 0;
@@ -45,6 +46,8 @@ export default function BlogBrowser({ articles, groups, initialGroup = "all" }: 
       return sort === "oldest" ? aTime - bTime : bTime - aTime;
     });
   }, [articles, group, query, sort, year]);
+
+  const hasPinnedArticles = visibleArticles.some((article) => article.featured);
 
   const resetFilters = () => {
     setQuery("");
@@ -103,7 +106,13 @@ export default function BlogBrowser({ articles, groups, initialGroup = "all" }: 
 
       {visibleArticles.length > 0 ? (
         <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {visibleArticles.map((article, index) => <BlogArticleCard key={article.slug} article={article} featured={index === 0} />)}
+          {visibleArticles.map((article, index) => (
+            <BlogArticleCard
+              key={article.slug}
+              article={article}
+              featured={hasPinnedArticles ? article.featured : index === 0}
+            />
+          ))}
         </div>
       ) : (
         <div className="mt-6 border-2 border-dashed border-black p-10 text-center dark:border-zinc-700">

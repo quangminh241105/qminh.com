@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
       slug: body.slug,
       groupSlug: body.groupSlug || "engineering-notes",
       publishedAt: body.publishedAt || new Date().toISOString().split("T")[0],
+      featured: Boolean(body.featured),
+      layout: body.layout,
       thumbnail: typeof body.thumbnail === "string" ? body.thumbnail : undefined,
       content: body.content || "",
       pictures: Array.isArray(body.pictures) ? body.pictures : [],

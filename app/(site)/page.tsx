@@ -11,12 +11,14 @@ import RetroIconLayer from "@/components/RetroIconLayer";
 import TypewriterText from "@/components/TypewriterText";
 
 function getRandomProjects(projects: Project[]) {
-  const shuffled = [...projects];
+  const pinned = projects.filter((project) => project.featured);
+  const unpinned = projects.filter((project) => !project.featured);
+  const shuffled = [...unpinned];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return shuffled.slice(0, 2);
+  return [...pinned, ...shuffled].slice(0, 2);
 }
 
 export default async function Home() {

@@ -11,6 +11,7 @@ import {
   type NavItem,
   type ResumeFile,
   type SocialLink,
+  type ContentLayout,
 } from "@/lib/portfolio";
 import type { Db } from "mongodb";
 
@@ -32,6 +33,10 @@ function normalizeStringArray(value: unknown, fallback: string[]): string[] {
   if (!Array.isArray(value)) return [...fallback];
   const normalized = value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
   return normalized.length > 0 ? normalized : [...fallback];
+}
+
+function normalizeContentLayout(value: unknown): ContentLayout {
+  return value === "spotlight" || value === "minimal" ? value : "standard";
 }
 
 function normalizeNavItems(value: unknown): NavItem[] {
@@ -199,6 +204,7 @@ async function ensureBootstrapped(db: Db) {
           repoUrl: p.repoUrl,
           demoUrl: p.demoUrl,
           featured: p.featured,
+          layout: p.layout || "standard",
           thumbnail: p.thumbnail || p.pictures[0] || "",
           pictures: p.pictures,
           videos: p.videos,
@@ -260,6 +266,8 @@ async function ensureBootstrapped(db: Db) {
           slug: a.slug,
           groupSlug: a.groupSlug,
           publishedAt: a.publishedAt,
+          featured: a.featured,
+          layout: a.layout,
           thumbnail: a.thumbnail || a.pictures[0] || "",
           content: a.content,
           pictures: a.pictures,
@@ -336,6 +344,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
         repoUrl: p.repoUrl || "",
         demoUrl: p.demoUrl || "",
         featured: Boolean(p.featured),
+        layout: normalizeContentLayout(p.layout),
         thumbnail,
         pictures,
         videos,
@@ -371,6 +380,8 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
         slug: a.slug,
         groupSlug: a.groupSlug || "engineering-notes",
         publishedAt: a.publishedAt,
+        featured: Boolean(a.featured),
+        layout: normalizeContentLayout(a.layout),
         content,
         pictures,
         videos: Array.isArray(a.videos) ? a.videos : [],
@@ -513,6 +524,7 @@ export async function upsertProject(project: {
   repoUrl: string;
   demoUrl: string;
   featured: boolean;
+  layout?: ContentLayout;
   thumbnail?: string;
   pictures?: string[];
   videos?: string[];
@@ -540,6 +552,7 @@ export async function upsertProject(project: {
           repoUrl: project.repoUrl,
           demoUrl: project.demoUrl,
           featured: project.featured,
+          layout: normalizeContentLayout(project.layout),
           thumbnail: project.thumbnail?.trim() || project.pictures?.[0] || "",
           pictures: project.pictures || [],
           videos: project.videos || [],
@@ -620,6 +633,8 @@ export async function upsertArticle(article: {
   slug: string;
   groupSlug?: string;
   publishedAt: string;
+  featured?: boolean;
+  layout?: ContentLayout;
   thumbnail?: string;
   content: string;
   pictures?: string[];
@@ -645,6 +660,8 @@ export async function upsertArticle(article: {
           slug,
           groupSlug: article.groupSlug || "engineering-notes",
           publishedAt: article.publishedAt,
+          featured: Boolean(article.featured),
+          layout: normalizeContentLayout(article.layout),
           content: article.content,
           thumbnail: article.thumbnail?.trim() || article.pictures?.[0] || "",
           pictures: article.pictures || [],
