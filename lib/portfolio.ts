@@ -18,6 +18,13 @@ export type ResumeFile = {
   updatedAt: string;
 };
 
+export type GalleryImage = {
+  url: string;
+  alt: string;
+  caption: string;
+  order?: number;
+};
+
 export class Skill {
   public readonly id: string;
 
@@ -138,6 +145,20 @@ export class ResumeItem {
   }
 }
 
+export class GalleryGroup {
+  public readonly id: string;
+
+  constructor(
+    public readonly title: string,
+    public readonly slug: string,
+    public readonly description: string,
+    public readonly images: GalleryImage[] = [],
+    public readonly order?: number,
+  ) {
+    this.id = slug;
+  }
+}
+
 export class PortfolioStore {
   readonly name = "Quang Minh";
   readonly profession = "IT Student";
@@ -155,7 +176,7 @@ export class PortfolioStore {
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Projects", href: "/projects" },
-    { label: "Resume", href: "/resume" },
+    { label: "Gallery", href: "/gallery" },
     { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
   ];
@@ -242,6 +263,8 @@ export class PortfolioStore {
       1
     ),
   ];
+
+  readonly galleryGroups: GalleryGroup[] = [];
 
   readonly articleGroups = [
     new ArticleGroup(

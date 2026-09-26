@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { type PortfolioContent } from "@/lib/portfolio-db";
-import type { ContentLayout } from "@/lib/portfolio";
+import type { ContentLayout, GalleryImage } from "@/lib/portfolio";
 import AdminLivePreview from "@/components/AdminLivePreview";
 import {
   logoutAdminAction,
@@ -13,6 +13,8 @@ import {
   deleteArticleServerAction,
   upsertArticleGroupAction,
   deleteArticleGroupAction,
+  saveGalleryGroupServerAction,
+  deleteGalleryGroupServerAction,
   saveSkillServerAction,
   deleteSkillServerAction,
   saveResumeItemServerAction,
@@ -38,7 +40,7 @@ type Props = {
   dbHealth: { ok: boolean; database: string; message: string };
 };
 
-type Tab = "overview" | "profile" | "projects" | "blog" | "groups" | "resume" | "skills" | "media";
+type Tab = "overview" | "profile" | "projects" | "blog" | "groups" | "gallery" | "resume" | "skills" | "media";
 
 function getErrorMessage(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : "";
@@ -342,6 +344,61 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
   };
 
   // ----------------------------------------------------
+  // Gallery Groups CRUD
+  // ----------------------------------------------------
+  const [galleryGroupsList, setGalleryGroupsList] = useState(portfolio.galleryGroups);
+  const [editingGalleryGroup, setEditingGalleryGroup] = useState<{
+    originalSlug?: string;
+    title: string;
+    slug: string;
+    description: string;
+    images: GalleryImage[];
+    imageUrl: string;
+  } | null>(null);
+
+  const startNewGalleryGroup = () => {
+    setEditingGalleryGroup({ title: "", slug: "", description: "", images: [], imageUrl: "" });
+  };
+
+  const handleSaveGalleryGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGalleryGroup) return;
+    setIsSaving(true);
+    try {
+      const result = await saveGalleryGroupServerAction({
+        originalSlug: editingGalleryGroup.originalSlug,
+        title: editingGalleryGroup.title,
+        slug: editingGalleryGroup.slug,
+        description: editingGalleryGroup.description,
+        images: editingGalleryGroup.images.map((image, index) => ({ ...image, order: index })),
+      });
+      if (!result.ok) throw new Error(result.error);
+      showStatus(`Gallery group "${editingGalleryGroup.title}" saved!`);
+      setEditingGalleryGroup(null);
+      window.location.reload();
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to save gallery group"), "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteGalleryGroup = async (slug: string, title: string) => {
+    if (!confirm(`Delete gallery group "${title}" and its image references?`)) return;
+    setIsSaving(true);
+    try {
+      const result = await deleteGalleryGroupServerAction(slug);
+      if (!result.ok) throw new Error(result.error);
+      setGalleryGroupsList((prev) => prev.filter((group) => group.slug !== slug));
+      showStatus(`Gallery group "${title}" deleted`);
+    } catch (err: unknown) {
+      showStatus(getErrorMessage(err, "Failed to delete gallery group"), "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ----------------------------------------------------
   // Skills CRUD
   // ----------------------------------------------------
   const [skillsList, setSkillsList] = useState(portfolio.skills);
@@ -528,8 +585,9 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
           { id: "projects", label: `Projects (${projectsList.length})`, icon: BriefcaseIcon },
           { id: "blog", label: `Blog (${articlesList.length})`, icon: BookOpenIcon },
           { id: "groups", label: `Blog Groups (${articleGroupsList.length})`, icon: LayersIcon },
+          { id: "gallery", label: `Gallery (${galleryGroupsList.length})`, icon: ImageIcon },
           { id: "profile", label: "Profile & About", icon: UserIcon },
-          { id: "resume", label: `Resume (${resumeList.length})`, icon: SlidersIcon },
+          { id: "resume", label: `About Timeline (${resumeList.length})`, icon: SlidersIcon },
           { id: "skills", label: `Skills (${skillsList.length})`, icon: SlidersIcon },
           { id: "media", label: "Media Upload", icon: UploadIcon },
         ].map((tab) => {
@@ -543,6 +601,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
                 setEditingProject(null);
                 setEditingArticle(null);
                 setEditingGroup(null);
+                setEditingGalleryGroup(null);
                 setEditingSkill(null);
                 setEditingResume(null);
               }}
@@ -1603,7 +1662,252 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         </div>
       )}
 
-      {/* Tab 5: PROFILE & ABOUT */}
+      {/* Tab 5: GALLERY CRUD */}
+      {activeTab === "gallery" && (
+        <div className="mt-6 space-y-6">
+          {!editingGalleryGroup ? (
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="font-mono text-base font-black uppercase tracking-wider text-black dark:text-white">
+                    Manage Gallery Groups
+                  </h2>
+                  <p className="mt-1 font-mono text-xs text-zinc-600 dark:text-zinc-400">
+                    Build Instagram-like collections with uploaded images, alt text, and captions.
+                  </p>
+                </div>
+                <button
+                  onClick={startNewGalleryGroup}
+                  className="inline-flex items-center gap-1.5 border-2 border-black bg-[#ffe600] px-4 py-2 font-mono text-xs font-black uppercase tracking-wider text-black shadow-[3px_3px_0px_#000000] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Add Gallery Group</span>
+                </button>
+              </div>
+
+              {galleryGroupsList.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {galleryGroupsList.map((group) => (
+                    <div
+                      key={group.slug}
+                      className="flex flex-col justify-between border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] dark:border-zinc-700 dark:bg-zinc-900"
+                    >
+                      <div>
+                        <div className="grid grid-cols-3 gap-1 overflow-hidden border-2 border-black bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-950">
+                          {group.images.slice(0, 6).map((image, index) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img key={`${image.url}-${index}`} src={image.url} alt={image.alt || group.title} className="aspect-square w-full object-cover" />
+                          ))}
+                          {group.images.length === 0 ? (
+                            <div className="col-span-3 flex aspect-[3/1] items-center justify-center font-mono text-[10px] font-bold uppercase text-zinc-500">
+                              No images yet
+                            </div>
+                          ) : null}
+                        </div>
+                        <div className="mt-4 flex items-center justify-between gap-2">
+                          <h3 className="font-mono text-base font-black uppercase text-black dark:text-white">{group.title}</h3>
+                          <span className="border border-black bg-[#ffe600] px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-black">
+                            {group.images.length} image{group.images.length === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                        <p className="mt-1 font-mono text-xs text-zinc-500">/{group.slug}</p>
+                        <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">{group.description || "No description"}</p>
+                      </div>
+                      <div className="mt-5 flex items-center gap-2 border-t-2 border-black pt-3 dark:border-zinc-700">
+                        <button
+                          onClick={() =>
+                            setEditingGalleryGroup({
+                              originalSlug: group.slug,
+                              title: group.title,
+                              slug: group.slug,
+                              description: group.description,
+                              images: group.images.map((image) => ({ ...image })),
+                              imageUrl: "",
+                            })
+                          }
+                          className="inline-flex flex-1 items-center justify-center gap-1 border-2 border-black bg-white py-1.5 font-mono text-xs font-bold uppercase tracking-wider text-black shadow-[2px_2px_0px_#000000] hover:bg-[#ffe600]"
+                        >
+                          <EditIcon className="h-3.5 w-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteGalleryGroup(group.slug, group.title)}
+                          className="inline-flex items-center justify-center border-2 border-black bg-red-100 p-2 text-red-700 shadow-[2px_2px_0px_#000000] hover:bg-red-200"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-black p-12 text-center dark:border-zinc-700">
+                  <ImageIcon className="mx-auto h-10 w-10" />
+                  <p className="mt-3 font-mono text-sm font-black uppercase">No gallery groups yet.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSaveGalleryGroup}
+              className="border-2 border-black bg-white p-6 shadow-[5px_5px_0px_#000000] dark:border-[#ffe600] dark:bg-zinc-900"
+            >
+              <div className="flex items-center justify-between border-b-2 border-black pb-3 dark:border-zinc-700">
+                <div>
+                  <h3 className="font-mono text-base font-black uppercase text-black dark:text-white">
+                    {editingGalleryGroup.originalSlug ? "Edit Gallery Group" : "Create Gallery Group"}
+                  </h3>
+                  <p className="mt-1 font-mono text-[11px] text-zinc-500">Images are stored under /uploads/gallery/&lt;group&gt;.</p>
+                </div>
+                <button type="button" onClick={() => setEditingGalleryGroup(null)} className="font-mono text-xs font-bold underline">
+                  Cancel
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">Group Title *</label>
+                  <input
+                    required
+                    value={editingGalleryGroup.title}
+                    onChange={(e) => setEditingGalleryGroup({ ...editingGalleryGroup, title: e.target.value })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">URL Slug *</label>
+                  <input
+                    required
+                    value={editingGalleryGroup.slug}
+                    onChange={(e) => setEditingGalleryGroup({ ...editingGalleryGroup, slug: e.target.value })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block font-mono text-xs font-bold uppercase text-black dark:text-zinc-300">Description</label>
+                  <textarea
+                    rows={2}
+                    value={editingGalleryGroup.description}
+                    onChange={(e) => setEditingGalleryGroup({ ...editingGalleryGroup, description: e.target.value })}
+                    className="mt-1 w-full border-2 border-black bg-white p-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                </div>
+
+                <div className="md:col-span-2 border-2 border-black bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-mono text-xs font-black uppercase text-black dark:text-[#ffe600]">Gallery Images</p>
+                      <p className="mt-1 font-mono text-[11px] text-zinc-500">Use JPG, PNG, WEBP, or GIF. Captions appear on hover.</p>
+                    </div>
+                    <label className="cursor-pointer border-2 border-black bg-white px-2.5 py-1 font-mono text-[11px] font-bold uppercase shadow-[2px_2px_0px_#000000] hover:bg-[#ffe600]">
+                      Upload Image
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = await handleFileUpload(
+                              file,
+                              `gallery/${uploadSlug(editingGalleryGroup.slug || editingGalleryGroup.title, "untitled")}`,
+                              "image",
+                            );
+                            if (url) {
+                              setEditingGalleryGroup({
+                                ...editingGalleryGroup,
+                                images: [...editingGalleryGroup.images, { url, alt: file.name, caption: "" }],
+                              });
+                            }
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      value={editingGalleryGroup.imageUrl}
+                      onChange={(e) => setEditingGalleryGroup({ ...editingGalleryGroup, imageUrl: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.preventDefault();
+                      }}
+                      placeholder="Paste an external image URL"
+                      className="flex-1 border-2 border-black bg-white p-2 font-mono text-xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const url = editingGalleryGroup.imageUrl.trim();
+                        if (!url) return;
+                        setEditingGalleryGroup({
+                          ...editingGalleryGroup,
+                          imageUrl: "",
+                          images: [...editingGalleryGroup.images, { url, alt: "", caption: "" }],
+                        });
+                      }}
+                      className="border-2 border-black bg-[#ffe600] px-3 font-mono text-[11px] font-black uppercase"
+                    >
+                      Add URL
+                    </button>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {editingGalleryGroup.images.map((image, index) => (
+                      <div key={`${image.url}-${index}`} className="relative border-2 border-black bg-white p-2 dark:border-zinc-700 dark:bg-zinc-900">
+                        <div className="relative overflow-hidden border border-black bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={image.url} alt={image.alt || "Gallery image preview"} className="aspect-square w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setEditingGalleryGroup({ ...editingGalleryGroup, images: editingGalleryGroup.images.filter((_, itemIndex) => itemIndex !== index) })}
+                            className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white"
+                            aria-label={`Remove gallery image ${index + 1}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <input
+                          value={image.alt}
+                          onChange={(e) => {
+                            const images = [...editingGalleryGroup.images];
+                            images[index] = { ...images[index], alt: e.target.value };
+                            setEditingGalleryGroup({ ...editingGalleryGroup, images });
+                          }}
+                          placeholder="Alt text"
+                          className="mt-2 w-full border border-black p-1.5 font-mono text-[11px] dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                        />
+                        <input
+                          value={image.caption}
+                          onChange={(e) => {
+                            const images = [...editingGalleryGroup.images];
+                            images[index] = { ...images[index], caption: e.target.value };
+                            setEditingGalleryGroup({ ...editingGalleryGroup, images });
+                          }}
+                          placeholder="Caption shown on hover"
+                          className="mt-2 w-full border border-black p-1.5 font-mono text-[11px] dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3 border-t-2 border-black pt-4">
+                <button type="button" onClick={() => setEditingGalleryGroup(null)} className="border-2 border-black bg-white px-5 py-2 font-mono text-xs font-bold uppercase">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSaving} className="border-2 border-black bg-[#ffe600] px-6 py-2 font-mono text-xs font-black uppercase shadow-[3px_3px_0px_#000000]">
+                  {isSaving ? "Saving..." : "Save Gallery"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* Tab 6: PROFILE & ABOUT */}
       {activeTab === "profile" && (
         <form
           onSubmit={handleProfileSubmit}
@@ -1782,7 +2086,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         <div className="mt-6 space-y-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-mono text-base font-black uppercase tracking-wider text-black dark:text-white">
-              Resume Timeline Items
+              About Timeline Items
             </h2>
             <button
               onClick={() =>
@@ -1795,7 +2099,7 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
               className="inline-flex items-center gap-1.5 border-2 border-black bg-[#ffe600] px-4 py-2 font-mono text-xs font-black uppercase tracking-wider text-black shadow-[3px_3px_0px_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-transform cursor-pointer"
             >
               <PlusIcon className="h-4 w-4" />
-              <span>Add Resume Milestone</span>
+              <span>Add Timeline Milestone</span>
             </button>
           </div>
 

@@ -18,12 +18,14 @@ import {
   deleteArticle,
   upsertArticleGroup,
   deleteArticleGroup,
+  upsertGalleryGroup,
+  deleteGalleryGroup,
   upsertSkill,
   deleteSkill,
   upsertResumeItem,
   deleteResumeItem,
 } from "@/lib/portfolio-db";
-import type { ContentLayout, ResumeFile } from "@/lib/portfolio";
+import type { ContentLayout, GalleryImage, ResumeFile } from "@/lib/portfolio";
 
 export async function loginAdminAction(_prevState: unknown, formData: FormData) {
   const password = formData.get("password") as string;
@@ -208,6 +210,7 @@ export async function saveResumeItemServerAction(data: {
     await requireAuth();
     await upsertResumeItem(data);
     revalidatePath("/");
+    revalidatePath("/about");
     revalidatePath("/resume");
     revalidatePath("/admin");
     return { ok: true } as const;
@@ -221,6 +224,7 @@ export async function deleteResumeItemServerAction(title: string) {
     await requireAuth();
     await deleteResumeItem(title);
     revalidatePath("/");
+    revalidatePath("/about");
     revalidatePath("/resume");
     revalidatePath("/admin");
     return { ok: true } as const;
@@ -378,6 +382,37 @@ export async function deleteArticleGroupAction(id: string) {
   } catch (error) {
     const result = actionFailure(error, "Failed to delete blog group.");
     return { ok: false, message: result.error } as const;
+  }
+}
+
+export async function saveGalleryGroupServerAction(data: {
+  title: string;
+  slug: string;
+  description: string;
+  images: GalleryImage[];
+  order?: number;
+  originalSlug?: string;
+}) {
+  try {
+    await requireAuth();
+    await upsertGalleryGroup(data);
+    revalidatePath("/gallery");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to save gallery group.");
+  }
+}
+
+export async function deleteGalleryGroupServerAction(slug: string) {
+  try {
+    await requireAuth();
+    await deleteGalleryGroup(slug);
+    revalidatePath("/gallery");
+    revalidatePath("/admin");
+    return { ok: true } as const;
+  } catch (error) {
+    return actionFailure(error, "Failed to delete gallery group.");
   }
 }
 

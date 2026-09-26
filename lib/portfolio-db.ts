@@ -7,11 +7,13 @@ import {
   Testimonial,
   Article,
   ArticleGroup,
+  GalleryGroup,
   ResumeItem,
   type NavItem,
   type ResumeFile,
   type SocialLink,
   type ContentLayout,
+  type GalleryImage,
 } from "@/lib/portfolio";
 import type { Db } from "mongodb";
 
@@ -39,11 +41,38 @@ function normalizeContentLayout(value: unknown): ContentLayout {
   return value === "spotlight" || value === "minimal" ? value : "standard";
 }
 
+function normalizeGalleryImages(value: unknown): GalleryImage[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item, index) => {
+    if (typeof item === "string" && item.trim()) {
+      return [{ url: item.trim(), alt: "", caption: "", order: index }];
+    }
+
+    if (!isRecord(item) || typeof item.url !== "string" || !item.url.trim()) return [];
+
+    return [{
+      url: item.url.trim(),
+      alt: typeof item.alt === "string" ? item.alt.trim() : "",
+      caption: typeof item.caption === "string" ? item.caption.trim() : "",
+      order: typeof item.order === "number" ? item.order : index,
+    }];
+  });
+}
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return isRecord(error) && error.code === 11000;
+}
+
 function normalizeNavItems(value: unknown): NavItem[] {
   if (!Array.isArray(value)) return [...portfolioStore.navItems];
   const normalized = value.flatMap((item) => {
     if (!isRecord(item) || typeof item.label !== "string" || typeof item.href !== "string") return [];
-    return [{ label: item.label, href: item.href }];
+    const isLegacyResume = item.label.trim().toLowerCase() === "resume" || item.href.trim() === "/resume";
+    return [{
+      label: isLegacyResume ? "Gallery" : item.label,
+      href: isLegacyResume ? "/gallery" : item.href,
+    }];
   });
   return normalized.length > 0 ? normalized : [...portfolioStore.navItems];
 }
@@ -82,6 +111,7 @@ export type PortfolioContent = {
   testimonials: Testimonial[];
   articles: Article[];
   articleGroups: ArticleGroup[];
+  galleryGroups: GalleryGroup[];
   resume: ResumeItem[];
   resumeFile?: ResumeFile;
   source: "db" | "fallback";
@@ -279,6 +309,13 @@ async function ensureBootstrapped(db: Db) {
     await db.collection("articles").createIndex({ slug: 1 }, { unique: true });
     await db.collection("articles").createIndex({ order: 1 });
 
+    // Gallery
+    if (!names.has("galleryGroups")) {
+      await db.createCollection("galleryGroups");
+    }
+    await db.collection("galleryGroups").createIndex({ slug: 1 }, { unique: true });
+    await db.collection("galleryGroups").createIndex({ order: 1 });
+
     // Resume
     if (!names.has("resumeItems")) {
       await db.createCollection("resumeItems");
@@ -307,13 +344,14 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
     const db = await getDb();
     await ensureBootstrapped(db);
 
-    const [profileDoc, dbSkills, dbProjects, dbTestimonials, dbArticleGroups, dbArticles, dbResume] = await Promise.all([
+    const [profileDoc, dbSkills, dbProjects, dbTestimonials, dbArticleGroups, dbArticles, dbGalleryGroups, dbResume] = await Promise.all([
       db.collection("profile").findOne({}, { sort: { updatedAt: -1 } }),
       db.collection("skills").find().sort({ order: 1 }).toArray(),
       db.collection("projects").find().sort({ order: 1 }).toArray(),
       db.collection("testimonials").find().sort({ order: 1 }).toArray(),
       db.collection("articleGroups").find().sort({ order: 1 }).toArray(),
       db.collection("articles").find().sort({ order: 1 }).toArray(),
+      db.collection("galleryGroups").find().sort({ order: 1 }).toArray(),
       db.collection("resumeItems").find().sort({ order: 1 }).toArray(),
     ]);
 
@@ -403,6 +441,15 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       order: group.order,
     }));
 
+    const plainGalleryGroups = dbGalleryGroups.map((group: any) => ({
+      id: group._id?.toString?.() ?? group.slug,
+      title: normalizeString(group.title, "Untitled gallery"),
+      slug: normalizeString(group.slug, "untitled-gallery"),
+      description: typeof group.description === "string" ? group.description : "",
+      images: normalizeGalleryImages(group.images),
+      order: group.order,
+    }));
+
     const knownGroupSlugs = new Set(plainArticleGroups.map((group) => group.slug));
     for (const article of plainArticles) {
       if (!knownGroupSlugs.has(article.groupSlug)) {
@@ -443,6 +490,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       testimonials: plainTestimonials,
       articles: plainArticles,
       articleGroups: plainArticleGroups,
+      galleryGroups: plainGalleryGroups,
       resume: plainResume,
       source: "db",
     };
@@ -457,6 +505,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       ...group,
       articleCount: plainArticles.filter((article) => article.groupSlug === group.slug).length,
     }));
+    const plainGalleryGroups = portfolioStore.galleryGroups.map((group) => ({ ...group }));
 
     return {
       name: portfolioStore.name,
@@ -474,6 +523,7 @@ export const getPortfolioContent = cache(async (): Promise<PortfolioContent> => 
       testimonials: plainTestimonials,
       articles: plainArticles,
       articleGroups: plainArticleGroups,
+      galleryGroups: plainGalleryGroups,
       resume: plainResume,
       source: "fallback",
     };
@@ -625,6 +675,49 @@ export async function deleteArticleGroup(slug: string) {
     throw new Error(`Move or delete the ${articleCount} article${articleCount === 1 ? "" : "s"} in this group first.`);
   }
   await db.collection("articleGroups").deleteOne({ slug });
+}
+
+export async function upsertGalleryGroup(group: {
+  title: string;
+  slug: string;
+  description?: string;
+  images?: GalleryImage[];
+  order?: number;
+  originalSlug?: string;
+}) {
+  const db = await getDb();
+  await ensureBootstrapped(db);
+  const title = group.title.trim();
+  const slug = group.slug.trim().toLowerCase();
+  if (!title || !slug) throw new Error("Gallery title and slug are required.");
+  const searchKey = group.originalSlug?.trim().toLowerCase() || slug;
+  const count = await db.collection("galleryGroups").countDocuments();
+  const images = normalizeGalleryImages(group.images).map((image, index) => ({ ...image, order: index }));
+
+  try {
+    await db.collection("galleryGroups").updateOne(
+      { slug: searchKey },
+      {
+        $set: {
+          title,
+          slug,
+          description: group.description?.trim() || "",
+          images,
+          order: typeof group.order === "number" ? group.order : count,
+        },
+      },
+      { upsert: true },
+    );
+  } catch (error: unknown) {
+    if (isDuplicateKeyError(error)) throw new Error(`A gallery group with the slug "${slug}" already exists.`);
+    throw error;
+  }
+}
+
+export async function deleteGalleryGroup(slug: string) {
+  const db = await getDb();
+  await ensureBootstrapped(db);
+  await db.collection("galleryGroups").deleteOne({ slug });
 }
 
 export async function upsertArticle(article: {
