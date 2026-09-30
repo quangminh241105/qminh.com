@@ -41,30 +41,35 @@ export async function getMinecraftConfigAction() {
   };
 }
 
+export type ExecuteCommandResult =
+  | { ok: true; command: string; response: string; latencyMs: number }
+  | { ok: false; error: string; latencyMs?: number };
+
 /**
  * Executes an arbitrary command on the Minecraft server via RCON
  */
-export async function executeMinecraftCommandAction(rawCommand: string) {
+export async function executeMinecraftCommandAction(rawCommand: string): Promise<ExecuteCommandResult> {
   try {
     await requireAuth();
     const command = rawCommand.trim().replace(/^\//, "");
     if (!command) {
-      return { ok: false as const, error: "Command cannot be empty." };
+      return { ok: false, error: "Command cannot be empty." };
     }
 
     const result = await executeRconCommand(command);
     if (!result.ok) {
-      return { ok: false as const, error: result.error || "RCON command failed.", latencyMs: result.latencyMs };
+      return { ok: false, error: result.error || "RCON command failed.", latencyMs: result.latencyMs };
     }
 
     return {
-      ok: true as const,
+      ok: true,
       command,
       response: result.response,
       latencyMs: result.latencyMs,
     };
   } catch (error) {
-    return actionFailure(error, "Failed to execute Minecraft command.");
+    const message = error instanceof Error ? error.message : "Failed to execute Minecraft command.";
+    return { ok: false, error: message };
   }
 }
 
