@@ -35,13 +35,17 @@ import {
   ImageIcon,
   VideoIcon,
 } from "@/components/icons";
+import { Terminal } from "lucide-react";
+import MinecraftManager from "@/app/admin/_components/MinecraftManager";
 
 type Props = {
   portfolio: PortfolioContent;
   dbHealth: { ok: boolean; database: string; message: string };
 };
 
-type Tab = "overview" | "profile" | "projects" | "blog" | "groups" | "gallery" | "resume" | "skills" | "media";
+type AdminSide = "portfolio" | "minecraft";
+type Tab = "overview" | "profile" | "projects" | "blog" | "groups" | "gallery" | "resume" | "skills" | "media" | "minecraft";
+
 
 function getErrorMessage(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : "";
@@ -68,6 +72,7 @@ function uploadSlug(value: string, fallback = "untitled") {
 }
 
 export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
+  const [activeSide, setActiveSide] = useState<AdminSide>("portfolio");
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -579,45 +584,102 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
         </div>
       )}
 
-      {/* Tabs Navigation */}
-      <div className="mt-6 flex flex-wrap gap-2 border-b-2 border-black pb-2 dark:border-zinc-700">
-        {[
-          { id: "overview", label: "Overview", icon: LayersIcon },
-          { id: "projects", label: `Projects (${projectsList.length})`, icon: BriefcaseIcon },
-          { id: "blog", label: `Blog (${articlesList.length})`, icon: BookOpenIcon },
-          { id: "groups", label: `Blog Groups (${articleGroupsList.length})`, icon: LayersIcon },
-          { id: "gallery", label: `Gallery (${galleryGroupsList.length})`, icon: ImageIcon },
-          { id: "profile", label: "Profile & About", icon: UserIcon },
-          { id: "resume", label: `About Timeline (${resumeList.length})`, icon: SlidersIcon },
-          { id: "skills", label: `Skills (${skillsList.length})`, icon: SlidersIcon },
-          { id: "media", label: "Media Upload", icon: UploadIcon },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id as Tab);
-                setEditingProject(null);
-                setEditingArticle(null);
-                setEditingGroup(null);
-                setEditingGalleryGroup(null);
-                setEditingSkill(null);
-                setEditingResume(null);
-              }}
-              className={`inline-flex items-center gap-2 border-2 border-black px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                isActive
-                  ? "bg-[#ffe600] text-black shadow-[3px_3px_0px_#000000] -translate-y-0.5"
-                  : "bg-white text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      {/* Dual-Mode Side Switcher */}
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setActiveSide("portfolio")}
+          className={`flex items-center justify-between border-2 border-black p-4 font-mono transition-all cursor-pointer ${
+            activeSide === "portfolio"
+              ? "bg-[#ffe600] text-black shadow-[4px_4px_0px_#000000] -translate-x-0.5 -translate-y-0.5"
+              : "bg-white text-zinc-700 shadow-[2px_2px_0px_#000000] hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="border-2 border-black bg-white p-2 text-black dark:bg-zinc-800 dark:text-white">
+              <BriefcaseIcon className="h-5 w-5" />
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-black uppercase tracking-wider">Side 1: Portfolio & Content CMS</p>
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">Blogs, Projects, Gallery, Profile, Skills, Resume</p>
+            </div>
+          </div>
+          <span className="hidden sm:inline-block border border-black px-2 py-0.5 text-[10px] font-bold uppercase bg-white dark:bg-zinc-800">
+            {activeSide === "portfolio" ? "● Active" : "Select"}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSide("minecraft")}
+          className={`flex items-center justify-between border-2 border-black p-4 font-mono transition-all cursor-pointer ${
+            activeSide === "minecraft"
+              ? "bg-[#ffe600] text-black shadow-[4px_4px_0px_#000000] -translate-x-0.5 -translate-y-0.5"
+              : "bg-white text-zinc-700 shadow-[2px_2px_0px_#000000] hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="border-2 border-black bg-[#22c55e] p-2 text-black">
+              <Terminal className="h-5 w-5" />
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-black uppercase tracking-wider">Side 2: Minecraft Server (RCON)</p>
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-400">Live Console, Players, World, Gamerules, Whitelist & Bans</p>
+            </div>
+          </div>
+          <span className="hidden sm:inline-block border border-black px-2 py-0.5 text-[10px] font-bold uppercase bg-white dark:bg-zinc-800">
+            {activeSide === "minecraft" ? "● Active" : "Port 25575"}
+          </span>
+        </button>
       </div>
+
+      {activeSide === "portfolio" && (
+        <>
+          {/* Tabs Navigation */}
+          <div className="mt-6 flex flex-wrap gap-2 border-b-2 border-black pb-2 dark:border-zinc-700">
+            {[
+              { id: "overview", label: "Overview", icon: LayersIcon },
+              { id: "projects", label: `Projects (${projectsList.length})`, icon: BriefcaseIcon },
+              { id: "blog", label: `Blog (${articlesList.length})`, icon: BookOpenIcon },
+              { id: "groups", label: `Blog Groups (${articleGroupsList.length})`, icon: LayersIcon },
+              { id: "gallery", label: `Gallery (${galleryGroupsList.length})`, icon: ImageIcon },
+              { id: "profile", label: "Profile & About", icon: UserIcon },
+              { id: "resume", label: `About Timeline (${resumeList.length})`, icon: SlidersIcon },
+              { id: "skills", label: `Skills (${skillsList.length})`, icon: SlidersIcon },
+              { id: "media", label: "Media Upload", icon: UploadIcon },
+              { id: "minecraft", label: "Minecraft RCON", icon: Terminal },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (tab.id === "minecraft") {
+                      setActiveSide("minecraft");
+                      return;
+                    }
+                    setActiveTab(tab.id as Tab);
+                    setEditingProject(null);
+                    setEditingArticle(null);
+                    setEditingGroup(null);
+                    setEditingGalleryGroup(null);
+                    setEditingSkill(null);
+                    setEditingResume(null);
+                  }}
+                  className={`inline-flex items-center gap-2 border-2 border-black px-4 py-2 font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-[#ffe600] text-black shadow-[3px_3px_0px_#000000] -translate-y-0.5"
+                      : "bg-white text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
 
       {/* Tab 1: OVERVIEW */}
       {activeTab === "overview" && (
@@ -2412,6 +2474,16 @@ export default function AdminDashboardClient({ portfolio, dbHealth }: Props) {
           </div>
         </div>
       )}
+        </>
+      )}
+
+      {/* Side B: Minecraft Server (RCON) */}
+      {activeSide === "minecraft" && (
+        <div className="mt-6">
+          <MinecraftManager />
+        </div>
+      )}
     </div>
   );
 }
+
